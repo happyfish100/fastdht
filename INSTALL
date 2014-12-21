@@ -6,13 +6,9 @@ Please visit the FastDHT Home Page for more detail.
 Google code: http://code.google.com/p/fastdht/
 Chinese language: http://fastdht.csource.com/
 
-#step 1. install libevent
-# download libevent-1.4.8-stable.tar.gz from website 
-# http://monkey.org/~provos/libevent/
-tar xzf libevent-1.4.8-stable.tar.gz
-cd libevent-1.4.8-stable
-./configure --prefix=/usr
-make; make install
+#step 1. download libfastcommon source package from github and install it,
+   the github address:
+   https://github.com/happyfish100/libfastcommon.git
 
 #step 2. install Berkeley DB
 # download db-4.7.25.tar.gz from website 

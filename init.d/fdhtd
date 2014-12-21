@@ -20,16 +20,6 @@ if [ ! -f $PRG ]; then
   exit 2
 fi
 
-if [ ! -f /usr/local/bin/stop.sh ]; then
-  echo "file /usr/local/bin/stop.sh does not exist!"
-  exit 2
-fi
-
-if [ ! -f /usr/local/bin/restart.sh ]; then
-  echo "file /usr/local/bin/restart.sh does not exist!"
-  exit 2
-fi
-
 if [ ! -f $CONF ]; then
   echo "file $CONF does not exist!"
   exit 2
@@ -45,16 +35,19 @@ start() {
 	echo
 	return $RETVAL
 }
+
 stop() {
-        /usr/local/bin/stop.sh $CMD
+    $CMD stop
 	RETVAL=$?
 	return $RETVAL
 }
+
 rhstatus() {
-	status fdhtd
+    status fdhtd
 }
+
 restart() {
-        /usr/local/bin/restart.sh $CMD
+   $CMD restart
 }
 
 case "$1" in
