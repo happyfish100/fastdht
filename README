@@ -1,0 +1,64 @@
+Copyright (C) 2008 Happy Fish / YuQing
+
+FastDHT may be copied only under the terms of the GNU General
+Public License V3, which may be found in the FastDHT source kit.
+Please visit the FastDHT Home Page for more detail.
+Google code (English language): http://code.google.com/p/fastdht/
+Chinese language: http://fastdht.csource.com/
+
+FastDHT is a high-performance distributed hash system (DHT) which based key 
+value pairs. It can store mass key value pairs such as filename mapping, 
+session data and user related data.
+
+FastDHT uses the Berkeley DB as data storage to support mass data and libevent
+as network IO to support huge connections. FastDHT implements data replication 
+by it's binlog file, so it only uses the basic storage function of the 
+Berkeley DB.
+ 
+FastDHT cluster composes of one or many groups and a group contains one or more
+servers. The data on a group is same and data is synchronized only among the 
+servers of the same group. The servers of a group are coordinative, so which 
+server is selected to access according to the key's hash code. The source server
+pushes the data to other servers in the group.
+
+The client of FastDHT decides which server to be selected. When select which 
+server to access, we use the key's hash code to avoid lookuping the constrast 
+table. The step of the algorithm is:
+  1. calculate the hash code of the key
+  2. group_index = hash_code % group_count
+  3. new_hash_code = (hash_code << 16) | (hash_code >> 16)
+  4. server_index = new_hash_code % server_count_in_the_group
+
+In FastDHT, the key contains three fields: namespace, object ID and key name. 
+These three concepts are like those of the database system: 
+namespace vs database name, object ID vs table name and key name vs field name.
+
+The purpose of namespace is resolving the probable data conflict between 
+multiple users such as the different applications or products.
+
+The purpose of object ID is convenient for organization and management of 
+object related data such as user's data and increasing the whole performance.
+
+The sytem is more flexible as namespace and object ID are imported. These two 
+fields can be empty in some cases.
+The input of the hash function (it's result is hash code) is: If namespace and 
+object ID are not empty, the concatenation of these two fields, or the key name.
+
+FastDHT imports the concept of logic group which is used to avoid re-hashing 
+when the system scales. A physical group is composed of one or more real 
+servers. It can contains one or more logic groups.
+
+A FastDHT server supports several logic groups and the data of a logic group is
+stored to a single Berkeley DB file. This design provides more convenience for 
+scaling. We can use a larger number of logic groups at the beginning. When 
+system scaled, one or more logic groups are migrated to the new physical 
+group(s). All things we need to do are:
+   1. copy the Berkeley DB data file to the new servers
+   2. change the config file
+   3. restart the programs of the FastDHT servers
+   4. restart the programs of the FastDHT clients if necessary
+
+FastDHT supports timeout and every key has timeout attribute. FastDHT can be 
+used to store session data which is more efficient and more simple than 
+the traditional database.
+

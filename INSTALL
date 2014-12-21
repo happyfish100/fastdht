@@ -1,0 +1,327 @@
+Copy right 2009 Happy Fish / YuQing
+
+FastDHT may be copied only under the terms of the GNU General
+Public License V3, which may be found in the FastDHT source kit.
+Please visit the FastDHT Home Page for more detail.
+Google code: http://code.google.com/p/fastdht/
+Chinese language: http://fastdht.csource.com/
+
+#step 1. install libevent
+# download libevent-1.4.8-stable.tar.gz from website 
+# http://monkey.org/~provos/libevent/
+tar xzf libevent-1.4.8-stable.tar.gz
+cd libevent-1.4.8-stable
+./configure --prefix=/usr
+make; make install
+
+#step 2. install Berkeley DB
+# download db-4.7.25.tar.gz from website 
+# http://www.oracle.com/technology/software/products/berkeley-db/index.html
+tar xzf db-4.7.25.tar.gz
+cd db-4.7.25/build_unix
+../dist/configure --prefix=/usr
+make; make install
+
+#step 3. install FastDHT
+# download FastDHT from website
+# http://code.google.com/p/fastdht/downloads/list
+# then unpack the source package as:
+# tar xzf FastDHT_v1.xx.tar.gz
+tar xzf FastDHT_v1.09.tar.gz
+cd FastDHT
+./make.sh; ./make.sh install
+
+#step 4. edit/modify the config file
+
+#step 5. run server program
+/usr/local/bin/fdhtd <conf_filename>
+
+#step 6. run test program
+#run the client test program:
+/usr/local/bin/fdht_test <conf_filename>
+#for example
+/usr/local/bin/fdht_test conf/fdht_client.conf
+
+
+server config file sample:
+###start of server config###
+disabled=false
+bind_addr=
+port=11411
+network_timeout=60
+base_path=/home/yuqing/fastdht
+
+# max concurrent connect count
+# default value is 256
+max_connections=256
+
+# work thread count, should <= max_connections
+# default value is 32
+max_threads=32
+
+# max communication package size
+# bytes unit can be one of follows:
+### G or g for gigabyte(GB)
+### M or m for megabyte(MB)
+### K or k for kilobyte(KB)
+### no unit for byte(B)
+# default value is 64KB
+max_pkg_size=64KB
+
+# min buff size, the task queue size at least: max_connections * min_buff_size,
+# you can set the value of min_buff_size to that of max_pkg_size to avoid 
+# memory re-alloc if memory is enough.
+# bytes unit can be one of follows:
+### G or g for gigabyte(GB)
+### M or m for megabyte(MB)
+### K or k for kilobyte(KB)
+### no unit for byte(B)
+# default value is 64KB
+min_buff_size=64KB
+
+# store type
+### BDB for Berkeley DB
+### MPOOL for memory pool
+store_type = BDB
+
+# cache size
+# bytes unit can be one of follows:
+### G or g for gigabyte(GB)
+### M or m for megabyte(MB)
+### K or k for kilobyte(KB)
+### no unit for byte(B)
+# default value is 64MB
+cache_size = 32MB
+
+# the BDB db filename prefix
+db_prefix = db
+
+# BDB page size. The minimum page size is 512 bytes, the maximum page size is 
+# 64KB, and the page size must be a power-of-two
+# bytes unit can be one of follows:
+### K or k for kilobyte(KB)
+### no unit for byte(B)
+# default value is 4KB
+page_size = 4096
+
+# DBD DB type, case insensitive, value can be:
+# btree: BTREE type (default)
+# hash: HASH table
+db_type = btree
+
+# MPOOL hash table init capacity
+# default value is 10000
+mpool_init_capacity = 10000
+
+# MPOOL hash table load factor
+# should >= 0.1 and <= 1.0
+# default value is 0.75
+mpool_load_factor = 0.75
+
+
+# MPOOL hash table clear expired key min interval (seconds)
+mpool_clear_min_interval = 30
+
+
+#standard log level as syslog, case insensitive, value list:
+### emerg for emergency
+### alert
+### crit for critical
+### error
+### warn for warning
+### notice
+### info (default)
+### debug
+log_level=info
+
+# unix group name to run this program, 
+# not set (empty) means run by the group of current user
+run_by_group=
+
+# unix username to run this program,
+# not set (empty) means run by current user
+run_by_user=
+
+# allow_hosts can ocur more than once, host can be hostname or ip address,
+# "*" means match all ip addresses, can use range like this: 10.0.1.[1-15,20] or
+# host[01-08,20-25].domain.com, for example:
+# allow_hosts=10.0.1.[1-15,20]
+# allow_hosts=host[01-08,20-25].domain.com
+allow_hosts=*
+
+# sync log buff to disk every interval seconds
+# default value is 10 seconds
+sync_log_buff_interval=10
+
+# the base time for syncing db to disk, time format: HH:MM
+# empty for the current time when the program starts
+# default value is 00:00
+sync_db_time_base=00:00
+
+# sync db to disk every interval seconds
+# default value is 86400 seconds (sync every day)
+# <= 0 for never sync
+sync_db_interval=86400
+
+# if write to binlog file, set to 0 to disable replication
+# default value is 1
+write_to_binlog=1
+
+# sync binlog buff / cache to disk every interval seconds
+# this parameter is valid when write_to_binlog set to 1
+# default value is 60 seconds
+sync_binlog_buff_interval=60
+
+# the base time for clear expired keys, time format: HH:MM
+# empty for the current time when the program starts
+# default value is 04:00
+clear_expired_time_base=04:00
+
+# clear expired keys every interval seconds
+# default value is 86400 seconds (clear every day)
+# <= 0 for never clear
+clear_expired_interval=86400
+
+# detect Berkeley DB dead lock every interval milliseconds
+# default value is 1000 milliseconds
+# <= 0 for never detect
+db_dead_lock_detect_interval=1000
+
+# the base time for compressing binlog file, time format: HH:MM
+# empty for the current time when the program starts
+# default value is 02:00
+compress_binlog_time_base=02:00
+
+# try to compress binlog file every interval seconds
+# default value is 86400 seconds (try to compress every day)
+# <= 0 for never compress
+compress_binlog_interval=86400
+
+# if write to binlog file, set to 0 to disable replication
+# use "#include filename" (not include double quotes) directive to load 
+# FastDHT server list when the filename is a relative path such as pure 
+# filename, the base path is the base path of current/this config file
+
+#include fdht_servers.conf
+
+###end of server config###
+
+
+Item detail
+1. common items
+----------------------------------------------------
+|  item name             |  type  | default | Must |
+----------------------------------------------------
+| group_count            | int    |         |  Y   |
+----------------------------------------------------
+| group#                 | string |         |  Y   |
+----------------------------------------------------
+| network_timeout        | int    | 30(s)   |  N   |
+----------------------------------------------------
+| log_level              | string | info    |  N   |
+----------------------------------------------------
+
+memo:
+   * group#: # based 0, from 0 to group_count - 1, 
+     value format: hostname:port
+     each group can have more than one value(host:port)
+
+2. server items
+----------------------------------------------------
+|  item name             |  type  | default | Must |
+----------------------------------------------------
+| base_path              | string |         |  Y   |
+----------------------------------------------------
+| store_type             | string |         |  Y   |
+----------------------------------------------------
+| db_prefix              | string |         |  Y   |
+----------------------------------------------------
+| disabled               | boolean| false   |  N   |
+----------------------------------------------------
+| bind_addr              | string |         |  N   |
+----------------------------------------------------
+| port                   | int    | 24000   |  N   |
+----------------------------------------------------
+| max_connections        | int    | 256     |  N   |
+----------------------------------------------------
+| max_threads            | int    |  32     |  N   |
+----------------------------------------------------
+| max_pkg_size           | string | 64KB    |  N   |
+----------------------------------------------------
+| min_buff_size          | string | 64KB    |  N   |
+----------------------------------------------------
+| cache_size             | string | 64MB    |  N   |
+----------------------------------------------------
+| page_size              | string |  4KB    |  N   |
+----------------------------------------------------
+| db_type                | string | btree   |  N   |
+----------------------------------------------------
+| mpool_init_capacity    | int    | 10000   |  N   |
+----------------------------------------------------
+| mpool_load_factor      | double | 0.75    |  N   |
+----------------------------------------------------
+| mpool_clear_min_interval| int   | 30 (s)  |  N   |
+----------------------------------------------------
+| run_by_group           | string |         |  N   |
+----------------------------------------------------
+| run_by_user            | string |         |  N   |
+----------------------------------------------------
+| allow_hosts            | string |   *     |  N   |
+----------------------------------------------------
+| sync_log_buff_interval | int    |  10(s)  |  N   |
+----------------------------------------------------
+| sync_db_time_base      | string |  00:00  |  N   |
+----------------------------------------------------
+| sync_db_interval       | int    | 86400(s)|  N   |
+----------------------------------------------------
+| clear_expired_time_base| string |  04:00  |  N   |
+----------------------------------------------------
+| expired_time_interval  | int    |  0(s)   |  N   |
+----------------------------------------------------
+| db_dead_lock_detect_interval| int|1000(ms)|  N   |
+----------------------------------------------------
+| write_to_binlog        | boolean|   1     |  N   |
+----------------------------------------------------
+| sync_binlog_buff_interval| int  |   60(s) |  N   |
+----------------------------------------------------
+| compress_binlog_time_base| string|  02:00 |  N   |
+----------------------------------------------------
+| compress_binlog_interval | int   |86400(s)|  N   |
+----------------------------------------------------
+
+memo:
+   * base_path is the base path of sub dirs: 
+     data and logs. base_path must exist and it's sub dirs will 
+     be automatically created if not exist.
+       $base_path/data: store data files
+       $base_path/logs: store log files
+   * log_level is the standard log level as syslog, case insensitive
+     # emerg: for emergency
+     # alert
+     # crit: for critical
+     # error
+     # warn: for warning
+     # notice
+     # info
+     # debug
+   * allow_hosts can ocur more than once, host can be hostname or ip address,
+     "*" means match all ip addresses, can use range like this: 10.0.1.[1-15,20]
+      or host[01-08,20-25].domain.com, for example:
+        allow_hosts=10.0.1.[1-15,20]
+        allow_hosts=host[01-08,20-25].domain.com
+
+
+3. client items
+---------------------------------------------------
+|  item name            |  type  | default | Must |
+---------------------------------------------------
+| base_path             | string |         |  Y   |
+---------------------------------------------------
+| keep_alive            | boolean|    0    |  N   |
+---------------------------------------------------
+
+memo:
+   * base_path is the base path of sub dirs: logs. 
+     base_path must exist.
+   * set keep_alive to true to make persistent connection
+

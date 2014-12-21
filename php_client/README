@@ -1,0 +1,324 @@
+
+Copyright (C) 2008 Happy Fish / YuQing
+
+FastDHT client php extension may be copied only under the terms of 
+the Less GNU General Public License (LGPL).
+
+Please visit the FastDHT Home Page for more detail.
+Google code (English language): http://code.google.com/p/fastdht/
+Chinese language: http://fastdht.csource.com/
+
+In file fastdht_client.ini, item fastdht_client.config_file point to
+the FastDHT client config filename. Please read ../INSTALL file to know 
+about how to config FastDHT client.
+
+FastDHT client php extension compiled under PHP 5.2.5, Steps:
+phpize
+./configure
+make
+
+#copy lib file to php extension directory, eg. /usr/lib/php/20060613/
+cp modules/fastdht_client.so  /usr/lib/php/20060613/
+
+#copy fastdfs_client.ini to PHP etc directory, eg. /etc/php/
+cp fastdfs_client.ini /etc/php/
+
+#modify config file fastdfs_client.ini, such as:
+vi /etc/php/fastdfs_client.ini
+
+#run test_fastdht.php
+php test_fastdht.php
+php test_fastdht_batch.php
+
+
+####parameters in fastdfs_client.ini####
+fastdht_client.connect_timeout: connect timeout in seconds
+fastdht_client.network_timeout: network timeout, 
+                                default value is 60 seconds
+
+fastdht_client.base_path: base absolute path, must set this item
+
+fastdht_client.log_level: standard log level as syslog, case insensitive, 
+value list:
+   emerg for emergency
+   alert
+   crit for critical
+   error
+   warn for warning
+   notice
+   info (default)
+   debug
+
+fastdht_client.log_filename: log filename, do not include path and 
+                             extension name 
+
+fastdht_client.config_count: config file count, default value is 1
+fastdht_client.config_file#: config filename, must include absolute path, 
+                             # means number, base 0,
+                             such as fastdht_client.config_file0
+
+
+
+FastDHT PHP functions:
+
+int fastdht_set(string namespace, string object_id, string key, 
+		string value [, int expires = FDHT_EXPIRES_NEVER])
+set value of the key
+params:
+	namespace: the namespace of the key, can be empty
+	object_id: the object ID of the key, can be empty
+	key: the key name, can't be empty
+	value: value of the key, can be empty
+	expires: optional, FDHT_EXPIRES_NEVER for persistent 
+                 storage (never expired)
+return: 0 for success, != 0 for error (errno)
+
+
+string/int/boolean fastdht_get(string namespace, string object_id, string key
+		[, boolean return_errno = false, int expires = FDHT_EXPIRES_NONE])
+get value of the key
+params:
+	namespace: the namespace of the key, can be empty
+	object_id: the object ID of the key, can be empty
+	key: the key name, can't be empty
+	return_errno: optional, when set to true, return UNIX errno when 
+		failure such as key not exist
+	expires: optional, unix timestamp, omitted or FDHT_EXPIRES_NONE do not 
+		change the expire time of the key
+return: string value for success, 
+        return int value (errno) for error when return_errno set to true, 
+        return false for error when return_errno set to false 
+
+
+string/int/boolean fastdht_inc(string namespace, string object_id, string key, 
+		int increment [, bool return_errno = false, int expires])
+increase value of the key, if the key does not exist,
+set the value to increment value (param named "increment")
+params:
+	namespace: the namespace of the key, can be empty
+	object_id: the object ID of the key, can be empty
+	key: the key name, can't be empty
+	increment: the increment value, can be negative
+	return_errno: optional, when set to true, return UNIX errno when 
+		failure such as key not exist
+	expires: optional, omitted or FDHT_EXPIRES_NEVER for persistent
+		 storage (never expired)
+return: the value after increment, string value for success, 
+        return int value (errno) for error when return_errno set to true, 
+        return false for error when return_errno set to false 
+
+
+int fastdht_delete(string namespace, string object_id, string key)
+delete the key
+params:
+	namespace: the namespace of the key, can be empty
+	object_id: the object ID of the key, can be empty
+	key: the key name, can't be empty
+return: 0 for success, != 0 for error (errno)
+
+
+int/array fastdht_batch_set(string namespace, string object_id, 
+		array key_list, [, int expires = FDHT_EXPIRES_NEVER])
+batch set keys
+params:
+	namespace: the namespace of the key, can't be empty
+	object_id: the object ID of the key, can't be empty
+	key_list: key value pair array
+	expires: optional, omitted or FDHT_EXPIRES_NEVER for persistent
+		 storage (never expired)
+return 0 for success, != 0 for error. 
+	return key => errno array when set some key fail
+
+
+array/int/boolean fastdht_batch_get(string namespace, string object_id, 
+		array key_list [, bool return_errno = false, 
+		int expires = FDHT_EXPIRES_NONE])
+batch get keys
+params:
+	namespace: the namespace of the key, can't be empty
+	object_id: the object ID of the key, can't be empty
+	key_list: the key array to fetch
+	return_errno: optional, when set to true, return UNIX errno when 
+		failure such as key not exist
+	expires: optional, unix timestamp, omitted or FDHT_EXPIRES_NONE do not 
+		change the expire time of the key
+return  return int value or false for error
+	return key => int value (errno) or false when set the key fail
+
+
+int/array fastdht_batch_delete(string namespace, string object_id, array key_list)
+batch delete keys
+params:
+	namespace: the namespace of the key, can't be empty
+	object_id: the object ID of the key, can't be empty
+	key_list: the key array to delete
+return 0 for success, != 0 for error
+	return key => errno array when set some key fail
+
+
+array/int/boolean fastdht_stat(int server_index[, bool return_errno])
+get specified server stat info
+params:
+	server_index: server index based 0
+	return_errno: optional, when set to true, return UNIX errno when 
+		failure such as connect server fail
+return array if success. 
+       if fail, return int errno when return_errno set to true,
+                return false when return_errno set to false
+
+
+array/int/boolean fastdht_stat_all([bool return_errno])
+get all server stat info
+params:
+	return_errno: optional, when set to true, return UNIX errno when 
+		failure such as connect server fail
+return array if success. key is ip_addr:port such as 10.62.164.84:11411 and
+       the value is assoc array. 
+       if fail, the value is errno (int number) when return_errno set to true,
+                the value is false when return_errno set to false
+
+
+array/int/boolean fastdht_get_sub_keys(string namespace, string object_id, 
+                [, bool return_errno])
+get sub key list of the object (FDHT server must support storing sub keys)
+params:
+	namespace: the namespace of the key, can't be empty
+	object_id: the object ID of the key, can't be empty
+return sub key array for success, else error
+
+
+
+FastDHT Class Info:
+
+class FastDHT([int config_index = 0, boolean bMultiThread = false]);
+constructor
+params:
+	config_index: use which config file, base 0
+	bMultiThread: if in multi-thread
+
+
+int FastDHT::set(string namespace, string object_id, string key, 
+		string value [, int expires = FDHT_EXPIRES_NEVER])
+set value of the key
+params:
+	namespace: the namespace of the key, can be empty
+	object_id: the object ID of the key, can be empty
+	key: the key name, can't be empty
+	value: value of the key, can be empty
+	expires: optional, FDHT_EXPIRES_NEVER for persistent 
+                 storage (never expired)
+return: 0 for success, != 0 for error (errno)
+
+
+string/int/boolean FastDHT::get(string namespace, string object_id, string key
+		[, return_errno = false, int expires = FDHT_EXPIRES_NONE])
+params:
+	namespace: the namespace of the key, can be empty
+	object_id: the object ID of the key, can be empty
+	key: the key name, can't be empty
+	return_errno: optional, when set to true, return UNIX errno when 
+		failure such as key not exist
+	expires: optional, unix timestamp, omitted or FDHT_EXPIRES_NONE do not 
+		change the expire time of the key
+return string value for success, 
+        return int value (errno) for error when return_errno set to true, 
+        return false for error when return_errno set to false 
+
+
+string/int/boolean FastDHT::inc(string namespace, string object_id, string key, 
+		int increment [, bool return_errno = false, int expires])
+increase value of the key, if the key does not exist,
+set the value to increment value (param named "increment")
+params:
+	namespace: the namespace of the key, can be empty
+	object_id: the object ID of the key, can be empty
+	key: the key name, can't be empty
+	increment: the increment value, can be negative
+	return_errno: optional, when set to true, return UNIX errno when 
+		failure such as key not exist
+	expires: optional, omitted or FDHT_EXPIRES_NEVER for persistent
+		 storage (never expired)
+return: the value after increment, string value for success, 
+        return int value (errno) for error when return_errno set to true, 
+        return false for error when return_errno set to false 
+
+
+int FastDHT::delete(string namespace, string object_id, string key)
+delete the key
+params:
+	namespace: the namespace of the key, can be empty
+	object_id: the object ID of the key, can be empty
+	key: the key name, can't be empty
+return: 0 for success, != 0 for error (errno)
+
+
+int/array FastDHT::batch_set(string namespace, string object_id, 
+		array key_list, [, int expires = FDHT_EXPIRES_NEVER])
+batch set keys
+params:
+	namespace: the namespace of the key, can't be empty
+	object_id: the object ID of the key, can't be empty
+	key_list: key value pair array
+	expires: optional, omitted or FDHT_EXPIRES_NEVER for persistent
+		 storage (never expired)
+return 0 for success, != 0 for error. 
+	return key => errno array when set some key fail
+
+
+array/int/boolean FastDHT::batch_get(string namespace, string object_id, 
+		array key_list [, bool return_errno = false, 
+		int expires = FDHT_EXPIRES_NONE])
+batch get keys
+params:
+	namespace: the namespace of the key, can't be empty
+	object_id: the object ID of the key, can't be empty
+	key_list: the key array to fetch
+	return_errno: optional, when set to true, return UNIX errno when 
+		failure such as key not exist
+	expires: optional, unix timestamp, omitted or FDHT_EXPIRES_NONE do not 
+		change the expire time of the key
+return  return int value or false for error
+	return key => int value (errno) or false when set the key fail
+
+
+int/array FastDHT::batch_delete(string namespace, string object_id, array key_list)
+batch delete keys
+params:
+	namespace: the namespace of the key, can't be empty
+	object_id: the object ID of the key, can't be empty
+	key_list: the key array to delete
+return 0 for success, != 0 for error
+	return key => errno array when set some key fail
+
+
+void FastDHT::close()
+close connections to FastDHT servers
+
+array/int/boolean FastDHT::stat(int server_index[, bool return_errno])
+get specified server stat info
+params:
+	server_index: server index based 0
+	return_errno: optional, when set to true, return UNIX errno when 
+		failure such as connect server fail
+return array if success. 
+       if fail, return int errno when return_errno set to true,
+                return false when return_errno set to false
+
+array/int/boolean FastDHT::stat_all([bool return_errno])
+get all server stat info
+params:
+	return_errno: optional, when set to true, return UNIX errno when 
+		failure such as connect server fail
+return array if success. key is ip_addr:port such as 10.62.164.84:11411 and
+       the value is assoc array. 
+       if fail, the value is errno (int number) when return_errno set to true,
+                the value is false when return_errno set to false
+
+array/int/boolean FastDHT::get_sub_keys(string namespace, string object_id, 
+                [, bool return_errno])
+get sub key list of the object (FDHT server must support storing sub keys)
+params:
+	namespace: the namespace of the key, can't be empty
+	object_id: the object ID of the key, can't be empty
+return sub key array for success, else error
+

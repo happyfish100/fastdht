@@ -1,0 +1,84 @@
+.SUFFIXES: .c .o .lo
+
+COMPILE = $(CC) $(CFLAGS)
+INC_PATH = -I../common -I/usr/local/include
+LIB_PATH = -L/usr/local/lib $(LIBS)
+TARGET_PATH = $(TARGET_PREFIX)/bin
+CONFIG_PATH = $(TARGET_CONF_PATH)
+TARGET_LIB = $(TARGET_PREFIX)/lib
+TARGET_INC = $(TARGET_PREFIX)/include
+
+STATIC_OBJS = ../common/hash.o ../common/chain.o ../common/pthread_func.o \
+              ../common/shared_func.o ../common/ini_file_reader.o \
+              ../common/logger.o ../common/sockopt.o \
+              ../common/base64.o ../common/http_func.o \
+              ../common/fdht_global.o ../common/fdht_proto.o \
+              ../common/fdht_func.o fdht_client.o
+
+FAST_SHARED_OBJS = ../common/hash.lo ../common/chain.lo \
+                   ../common/shared_func.lo ../common/ini_file_reader.lo \
+                   ../common/logger.lo ../common/sockopt.lo \
+                   ../common/base64.lo ../common/sched_thread.lo \
+                   ../common/http_func.lo ../common/md5.lo \
+                   ../common/pthread_func.lo ../common/local_ip_func.lo \
+                   ../common/avl_tree.lo ../common/connection_pool.lo
+
+FDHT_SHARED_OBJS = ../common/fdht_global.lo ../common/fdht_proto.lo \
+                   ../common/fdht_func.lo fdht_client.lo
+
+FAST_HEADER_FILES = ../common/common_define.h ../common/hash.h \
+                    ../common/chain.h ../common/logger.h \
+                    ../common/base64.h ../common/shared_func.h \
+                    ../common/pthread_func.h ../common/ini_file_reader.h \
+                    ../common/sockopt.h ../common/sched_thread.h \
+                    ../common/http_func.h ../common/md5.h ../common/_os_bits.h \
+                    ../common/local_ip_func.h ../common/avl_tree.h \
+                    ../common/connection_pool.h
+
+FDHT_HEADER_FILES = ../common/fdht_define.h  ../common/fdht_func.h  \
+                    ../common/fdht_global.h  ../common/fdht_proto.h \
+                    ../common/fdht_proto_types.h ../common/fdht_types.h \
+                    fdht_client.h
+
+ALL_OBJS = $(STATIC_OBJS) $(FAST_SHARED_OBJS) $(FDHT_SHARED_OBJS)
+
+ALL_PRGS = fdht_test fdht_batch_test fdht_test_thread fdht_test_set \
+           fdht_test_get fdht_set fdht_get fdht_delete
+ALL_LIBS = libfastcommon.so.1 libfdhtclient.so.1
+
+all: $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
+libfastcommon.so.1:
+	$(COMPILE) -o $@ $< -shared $(FAST_SHARED_OBJS) $(LIB_PATH)
+	ln -fs libfastcommon.so.1 libfastcommon.so
+libfdhtclient.so.1:
+	$(COMPILE) -o $@ $< -shared $(FDHT_SHARED_OBJS) $(LIB_PATH) -L. -lfastcommon
+	ln -fs libfdhtclient.so.1 libfdhtclient.so
+.o:
+	$(COMPILE) -o $@ $<  $(STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
+.c:
+	$(COMPILE) -o $@ $<  $(STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
+.c.o:
+	$(COMPILE) -c -o $@ $<  $(INC_PATH)
+.c.lo:
+	$(COMPILE) -c -fPIC -o $@ $<  $(INC_PATH)
+install:
+	mkdir -p $(TARGET_PATH)
+	mkdir -p $(CONFIG_PATH)
+	mkdir -p $(TARGET_LIB)
+	cp -f $(ALL_PRGS) $(TARGET_PATH)
+	cp -f $(ALL_LIBS) $(TARGET_LIB)
+	if [ ! -f $(CONFIG_PATH)/fdht_client.conf ]; then cp -f ../conf/fdht_client.conf ../conf/fdht_servers.conf $(CONFIG_PATH); fi
+
+	mkdir -p $(TARGET_INC)
+	mkdir -p $(TARGET_INC)/fastcommon
+	mkdir -p $(TARGET_INC)/fastdht
+	cp -f $(FAST_HEADER_FILES) $(TARGET_INC)/fastcommon
+	cp -f $(FDHT_HEADER_FILES) $(TARGET_INC)/fastdht
+
+	ln -fs $(TARGET_LIB)/libfastcommon.so.1 $(TARGET_LIB)/libfastcommon.so
+	ln -fs $(TARGET_LIB)/libfdhtclient.so.1 $(TARGET_LIB)/libfdhtclient.so
+	ln -fs $(TARGET_LIB)/libfastcommon.so.1 /usr/lib/libfastcommon.so
+	ln -fs $(TARGET_LIB)/libfdhtclient.so.1 /usr/lib/libfdhtclient.so
+clean:
+	rm -f $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
+

@@ -1,0 +1,220 @@
+
+Version 2.00  2014-02-02
+ * discard libevent, use epoll in Linux, kqueue in FreeBSD, port in SunOS directly
+ * mpool use hash table's multi locks
+ * fdhtd support start, stop and restart command
+
+Version 1.23  2013-03-20
+ * bug fixed: mp_do_set unlock before call mp_clear_expired_keys
+ * fdhtd.conf add parameter: need_clear_expired_data
+ * support multi accept threads
+ * add common/connection_pool.h and common/connection_pool.c
+
+Version 1.22  2012-12-31
+ * support rotate log by file size
+ * add common/avl_tree.h and common/avl_tree.c
+ * common/ini_file_reader.c does NOT call chdir
+ * use g_current_time instead of call time function
+
+Version 1.21  2012-07-08
+ * another method to get local ip addresses
+ * logger support access log
+ * set pipe reading fd with attribute O_NOATIME
+
+Version 1.20  2012-07-01
+ * bug fixed: client/fdht_client.c get_connection set err_no correctly
+ * common/logger.c: function log_init can be called more than once
+ * php extension logInfo change to logDebug
+ * c client logInfo change to logDebug
+
+Version 1.19  2012-05-13
+ * md5 function name changed to avoid conflict
+ * sync.c: binlog_write_cache_buff dynamic malloc intead of static char array
+ * sync.c: function fdht_binlog_read optimization
+ * remove compile warnings
+ * get local ip addresses enhancement
+ * php extension compile passed in PHP 5.4.0
+
+Version 1.18  2011-08-08
+ * use hash function: Time33Hash instead of PJWHash
+
+Version 1.17  2011-04-28
+ * maintain object's key list
+ * add tools: client/fdht_set, client/fdht_get and client/fdht_delete
+
+Version 1.16  2011-02-17
+ * cp fdht_client.conf to /etc/fdht/
+ * init.d/fdhtd correct config file name
+ * bug fixed: write_to_binlog_index then increase g_binlog_index
+
+Version 1.15  2011-01-31
+ * strerror change to STRERROR macro
+ * bug fixed: server/func.c: load_group_servers type mismatched
+ * update common files from FastDFS V2.08
+ * macro DEFAULT_SYNC_MARK_FILE_FREQ change to FDHT_DEFAULT_SYNC_MARK_FILE_FREQ
+
+Version 1.14  2010-11-18
+ * sockopt.h add non-block connect function connectserverbyip_nb
+ * log_init set log to cache to false (no cache)
+ * connect server support timeout, adding connect_timeout parameter in
+   config file
+ * local ip functions move to common/local_ip_func.c
+ * do not catch signal SIGABRT
+ * bug fixed: when fdhtd quit, maybe write to binlog file fail,
+   the error info is "Bad file descriptor"
+ 
+Version 1.13  2010-06-06
+ * logger support context (multi instance)
+ * add files: common/pthread_func.h and common/pthread_func.c
+ * common/sched_thread.h, remove statement: extern bool g_continue_flag;
+ * global variables: g_base_path, g_network_timeout, g_version change to
+   g_fdht_base_path, g_fdht_network_timeout, g_fdht_version
+ * client add libfastcommon
+ * common/fdfs_base64.h/c change name to common/base64.h/c
+ * sync mark file and stat file to disk properly
+ * make.sh use TARGET_PREFIX instead of TARGET_PATH
+
+Version 1.12  2010-04-11
+ * copy common files from FastDFS/common
+ * remove compile warning info of logError
+ * ini file reader supoort section
+ * redirect stdout and stderr to log file
+ * storage.conf: add if_alias_prefix parameter to get the ip address of the
+   local host
+ * make.sh compile use debug mode
+ * make.sh: default not install FastDHT services in Linux server
+
+Version 1.11  2009-10-13
+ * bug fixed: http_func.c logError parameter mismatched
+ * base64 use context, functions changed
+ * common/ini_file_reader.c: fix memory leak
+ * omit 64 bits OS compile warning
+ * shared_func.c add functions: buffer_strcpy and buffer_memcpy
+ * add thread_stack_size in config file, default value is 1MB
+ * server use setsockopt to keep alive
+ * client persistent connection use setsockopt to keep alive
+ * bug fixed: common/shared_func.c allow_hosts array maybe overflow in some case
+ * common/sockopt.c: setsockopt level SOL_TCP only supported in Linux
+ * common/http_func.c: do not use function strsep because strsep is not portable
+ * server index exchanged hash code change type from unsigned int to int
+
+Version 1.10  2009-07-19
+ * ini reader support HTTP protocol, conf file can be an url
+ * hash does not use macro: HASH_MALLOC_VALUE, add member is_malloc_value
+ * sockopt.c sendfile and recvfile support non-block socket
+ * sync.c call tcpsetnonblock after connect
+ * bug fix: sockopt.c do not set non-block in function tcpsetserveropt
+ * fdht_compress.c: change global static variable names to avoid conflict
+
+Version 1.09  2009-07-01
+ * correct php extension error info
+ * fdht_compress.c: make sure syncing is done
+ * add shell script: stop.sh, restart.sh modified
+ * add fdhtd as service in Linux platform
+ * correct get local ip addresses
+ * common files do not use global vars like g_network_timeout and g_base_path
+ * fdht_compress.c: use {base_path}/tmp as sort temporary path instead of /tmp
+ * sync.c: check binlog file format when reading
+ * client can use proxy for FastDHT
+ * cache size not division by g_db_count
+ * protocol add stat cmd
+ * client retry connect when connection is not connected and keep_alive is true
+ * multi db use only one env
+ * support MPOOL (memory only cache as memcached)
+ * when max_threads set 1, use process instead of thread
+ * client use non-block socket to increase performance
+ * hash.c use chain impl by self
+ * bugfix: never expired / persistent keys not be cleared when clear expired keys
+ * inc use thread lock for atomicity
+ * mpool use rwlock, support multi-threads
+ * change work thread mode
+ * stat cmd add more info
+
+Version 1.08  2009-04-12
+ * common/shared_func.c: rindex change to strrchr, add #include <netinet/in.h>
+ * use scheduling thread to sync binlog buff / cache to disk, add parameter 
+   "sync_binlog_buff_interval" to conf file fdhtd.conf
+ * add restart daemon shell script: restart.sh
+ * add compress binlog tool
+ * hash_walk change return type from void to int
+ * compress binlog tool can be run by scheduler, fdhtd.conf add parameters:
+   compress_binlog_time_base and compress_binlog_interval
+
+Version 1.07  2009-03-13
+ * fastdht_client.ini: add parameter fastdht_client.log_filename
+ * a header can be recv more than one time (recv header particially)
+ * for compatible with other language such as Java, change hash function 
+   return type from unsigned int to int
+
+Version 1.06  2009-02-26
+  * in config file conf/fdhtd.conf: add item "min_buff_size"
+  * add batch get, can get multi keys once
+  * add batch set, can set multi keys once
+  * add batch delete, can delete multi keys once
+  * php extension add class version, see sub dir php_client/
+  * performance enhancement: in function get, delay expires (timeout) 
+    use partial set
+  * php extension support multi config file
+  * bug fix: fdht_client_init can be called more than once
+  * move global config parameters to fastdht_client.ini
+
+Version 1.05  2009-02-04
+  * only start one dead_lock_detect thread to save resource
+  * in file php_client/README: add function description
+  * in file client/fdht_client.h: add function description / remark
+
+Version 1.04  2009-01-29
+  * sync.c: when call socket fail, continue deal (do not exit)
+  * client: share a same sock when the ip and port of servers are same
+  * client: thread-safe and add muti-thread test program fdht_test_thread.c
+  * sync.c: fdht_sync_del return 0 when key not exists (errno: ENOENT)
+
+Version 1.03  2009-01-25
+  * BDB env->open add DB_INIT_LOCK flag and add BDB dead_lock_detect thread
+  * shared_func.c add urlencode and urldecode functions
+  * clear expired keys every interval seconds
+  * php_client directory: add test_fastdht.php
+
+Version 1.02  2009-01-18
+  * protocol header add field: keep_alive to support persistent connection
+  * fdhtd.conf add item: write_to_binlog to enable or disable replication
+  * return ENOENT (key not exist) when the key expires
+  * client auto reconnect when connection is reset and keep_alive is true
+  * add php client extension
+  * add README file in sub directories: client and php_client
+
+Version 1.01  2008-12-15
+  * fdhtd.conf add parameter: sync_db_time_base, change the default value of 
+    sync_db_interval to 86400 (one day)
+  * remove fdht_global.h dependency of client codes
+
+Version 1.00  2008-12-08
+  * fix memory leak in sync.c
+  * function enhancement: db recovery when the daemon starts
+  * pass (void *)1 to memp_trickle before exit
+
+Version 0.90  2008-12-02
+  * use memp_trickle to sync data to BDB file periodically
+  * fix bug: mod(%) result maybe < 0
+  * sockopt.h / .c add function tcpsetnodelay
+  * bug fixed: realloc size and reasign
+  * add client set test program: fdht_test_set.c
+  * add Makefile.in and make.sh
+  * pipe read more bytes once
+
+Version 0.80  2008-11-24
+  * add namespace and object ID
+  * add expires (timeout)
+  * add binlog write buff to increase performance
+
+Version 0.50  2008-10-22
+  * support data sync
+
+Version 0.20  2008-09-27
+  * framework is done:
+    # implement db functions such as get, set, inc and del
+    # implement asynchronous IO use libevent
+
+Version 0.10  2008-09-08
+  * first version, only implement queue management
+
