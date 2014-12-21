@@ -1,15 +1,12 @@
 .SUFFIXES: .c .o
 
 COMPILE = $(CC) $(CFLAGS)
-INC_PATH = -I../common -I../server -I/usr/local/include
-LIB_PATH = -L/usr/local/lib $(LIBS)
+INC_PATH = -I../common -I../server -I/usr/include/fastcommon -I/usr/local/include
+LIB_PATH = -L/usr/local/lib -lfastcommon $(LIBS)
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
 COMMON_LIB =
-SHARED_OBJS = ../common/hash.o  ../common/chain.o ../common/pthread_func.o \
-              ../common/shared_func.o ../common/ini_file_reader.o \
-              ../common/logger.o ../common/sockopt.o ../common/http_func.o \
-              ../common/base64.o ../common/fdht_global.o
+SHARED_OBJS = ../common/fdht_global.o
 
 ALL_OBJS = $(SHARED_OBJS)
 

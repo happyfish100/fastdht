@@ -1,22 +1,14 @@
 .SUFFIXES: .c .o
 
 COMPILE = $(CC) $(CFLAGS)
-INC_PATH = -I../common -I/usr/local/include
-LIB_PATH = -L/usr/local/lib -ldb $(LIBS)
+INC_PATH = -I../common -I/usr/include/fastcommon -I/usr/local/include
+LIB_PATH = -L/usr/local/lib -ldb -lfastcommon $(LIBS)
 TARGET_PATH = $(TARGET_PREFIX)/bin
 CONFIG_PATH = $(TARGET_CONF_PATH)
 
 COMMON_LIB =
-SHARED_OBJS = ../common/hash.o  ../common/chain.o \
-              ../common/shared_func.o ../common/ini_file_reader.o \
-              ../common/logger.o ../common/sockopt.o \
-              ../common/base64.o ../common/sched_thread.o \
-              ../common/http_func.o ../common/pthread_func.o \
-              ../common/local_ip_func.o ../common/fdht_global.o \
+SHARED_OBJS = ../common/fdht_global.o \
               ../common/fdht_func.o ../common/fdht_proto.o \
-              ../common/ioevent.o ../common/fast_timer.o  \
-              ../common/fast_task_queue.o ../common/ioevent_loop.o \
-              ../common/process_ctrl.o \
               global.o fdht_io.o db_op.o func.o work_thread.o sync.o \
               db_recovery.o store.o mpool_op.o key_op.o
 

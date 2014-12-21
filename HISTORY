@@ -1,4 +1,7 @@
 
+Version 2.01  2014-12-21
+ * use libfastcommon
+
 Version 2.00  2014-02-02
  * discard libevent, use epoll in Linux, kqueue in FreeBSD, port in SunOS directly
  * mpool use hash table's multi locks
