@@ -108,6 +108,8 @@ int work_thread_init()
 			g_max_threads, errno, STRERROR(errno));
 		return errno != 0 ? errno : ENOMEM;
 	}
+	
+	memset(g_thread_data, 0, sizeof(struct nio_thread_data) * g_max_threads);
 
 	g_thread_count = 0;
 	pDataEnd = g_thread_data + g_max_threads;
