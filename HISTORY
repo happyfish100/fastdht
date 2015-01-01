@@ -1,6 +1,7 @@
 
-Version 2.01  2014-12-21
+Version 2.01  2015-01-01
  * use libfastcommon
+ * bug fixed: should call memset to init g_thread_data
 
 Version 2.00  2014-02-02
  * discard libevent, use epoll in Linux, kqueue in FreeBSD, port in SunOS directly
