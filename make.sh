@@ -31,7 +31,7 @@ else
   CFLAGS="$CFLAGS -O3"
 fi
 
-LIBS='-lm'
+LIBS=''
 uname=`uname`
 if [ "$uname" = "Linux" ]; then
   CFLAGS="$CFLAGS"
