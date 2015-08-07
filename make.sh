@@ -18,15 +18,6 @@ else
  OS_BITS=32
 fi
 
-cat <<EOF > common/_os_bits.h
-#ifndef _OS_BITS_H
-#define _OS_BITS_H
-
-#define OS_BITS  $OS_BITS
-
-#endif
-EOF
-
 TARGET_PREFIX=/usr/local
 TARGET_CONF_PATH=/etc/fdht
 
@@ -40,21 +31,21 @@ else
   CFLAGS="$CFLAGS -O3"
 fi
 
-LIBS=''
+LIBS='-lm'
 uname=`uname`
 if [ "$uname" = "Linux" ]; then
-  CFLAGS="$CFLAGS -DOS_LINUX -DIOEVENT_USE_EPOLL"
+  CFLAGS="$CFLAGS"
 elif [ "$uname" = "FreeBSD" ]; then
-  CFLAGS="$CFLAGS -DOS_FREEBSD -DIOEVENT_USE_KQUEUE"
+  CFLAGS="$CFLAGS"
 elif [ "$uname" = "SunOS" ]; then
-  CFLAGS="$CFLAGS -DOS_SUNOS -D_THREAD_SAFE -DIOEVENT_USE_PORT"
+  CFLAGS="$CFLAGS -D_THREAD_SAFE"
   LIBS="$LIBS -lsocket -lnsl -lresolv"
   export CC=gcc
 elif [ "$uname" = "AIX" ]; then
-  CFLAGS="$CFLAGS -DOS_AIX -D_THREAD_SAFE"
+  CFLAGS="$CFLAGS -D_THREAD_SAFE"
   export CC=gcc
 elif [ "$uname" = "HP-UX" ]; then
-  CFLAGS="$CFLAGS -DOS_HPUX"
+  CFLAGS="$CFLAGS"
 fi
 
 have_pthread=0
