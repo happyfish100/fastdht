@@ -321,7 +321,7 @@ static int64_t mp_inc_value(const HashData *old_data, const int inc,
 	}
 	expires = (int)((long)arg);
 	int2buff(expires, new_value);
-	*new_value_len = 4 + sprintf(new_value + 4, INT64_PRINTF_FORMAT, n);
+	*new_value_len = 4 + sprintf(new_value + 4, "%"PRId64, n);
 	return n;
 }
 

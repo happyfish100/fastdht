@@ -3,7 +3,7 @@ cat <<EOF > $tmp_src_filename
 #include <stdio.h>
 int main()
 {
-	printf("%d\n", sizeof(long));
+	printf("%d\n", (int)sizeof(long));
 	return 0;
 }
 EOF
@@ -80,7 +80,7 @@ elif [ "$uname" = "FreeBSD" ]; then
   fi
 fi
 
-if [ $have_pthread -eq 0 ]; then
+if [ $have_pthread -eq 0 ] && [ -f /sbin/ldconfig ]; then
    /sbin/ldconfig -p | fgrep libpthread.so > /dev/null
    if [ $? -eq 0 ]; then
       LIBS="$LIBS -lpthread"

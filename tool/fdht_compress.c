@@ -33,7 +33,7 @@ typedef struct
 {
 	int binlog_index;
 	int binlog_fd;
-	off_t binlog_offset;
+	int64_t binlog_offset;
 } CompressReader;
 
 typedef struct
@@ -44,7 +44,7 @@ typedef struct
 	FDHTKeyInfo key_info;
 	int value_len;
 	time_t expires;  //key expires, 0 for never expired
-	off_t offset;
+	int64_t offset;
 	int record_length;
 } CompressRecord;
 
@@ -52,7 +52,7 @@ typedef struct
 {
 	char key[(FDHT_MAX_FULL_KEY_LEN / 3) * 4];
 	char op_type;
-	off_t offset;
+	int64_t offset;
 	int record_length;
 	time_t expires;  //key expires, 0 for never expired
 } CompressRawRow;
@@ -364,7 +364,7 @@ static int compress_open_readable_binlog(CompressReader *pReader)
 	{ \
 		logError("file: "__FILE__", line: %d, " \
 			"item \"%s\" in binlog file \"%s\" " \
-			"is invalid, file offset: "INT64_PRINTF_FORMAT", " \
+			"is invalid, file offset: %"PRId64", " \
 			"%s: %d <= 0", __LINE__, caption, \
 			compress_get_binlog_filename(pReader, NULL), \
 			pReader->binlog_offset, caption, value); \
@@ -374,7 +374,7 @@ static int compress_open_readable_binlog(CompressReader *pReader)
 	{ \
 		logError("file: "__FILE__", line: %d, " \
 			"item \"%s\" in binlog file \"%s\" " \
-			"is invalid, file offset: "INT64_PRINTF_FORMAT", " \
+			"is invalid, file offset: %"PRId64", " \
 			"%s: %d > %d", __LINE__, caption, \
 			compress_get_binlog_filename(pReader, NULL), \
 			pReader->binlog_offset, caption, value, max_length); \
@@ -405,7 +405,7 @@ static int compress_binlog_read(CompressReader *pReader, CompressRecord *pRecord
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"errno: %d, error info: %s", __LINE__, \
 			compress_get_binlog_filename(pReader, NULL), \
 			pReader->binlog_offset, errno, STRERROR(errno));
@@ -416,7 +416,7 @@ static int compress_binlog_read(CompressReader *pReader, CompressRecord *pRecord
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"read bytes: %d != %d", \
 			__LINE__, compress_get_binlog_filename(pReader, NULL),\
 			pReader->binlog_offset, read_bytes, \
@@ -439,7 +439,7 @@ static int compress_binlog_read(CompressReader *pReader, CompressRecord *pRecord
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"data format invalid, binlog file: %s, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"read item: %d != 6", \
 			__LINE__, compress_get_binlog_filename(pReader, NULL),\
 			pReader->binlog_offset, nItem);
@@ -459,7 +459,7 @@ static int compress_binlog_read(CompressReader *pReader, CompressRecord *pRecord
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"item \"value length\" in binlog file \"%s\" " \
-			"is invalid, file offset: "INT64_PRINTF_FORMAT", " \
+			"is invalid, file offset: %"PRId64", " \
 			"value length: %d < 0", \
 			__LINE__, compress_get_binlog_filename(pReader, NULL), \
 			pReader->binlog_offset, pRecord->value_len);
@@ -474,7 +474,7 @@ static int compress_binlog_read(CompressReader *pReader, CompressRecord *pRecord
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"errno: %d, error info: %s", __LINE__, \
 			compress_get_binlog_filename(pReader, NULL), \
 			pReader->binlog_offset, errno, STRERROR(errno));
@@ -484,7 +484,7 @@ static int compress_binlog_read(CompressReader *pReader, CompressRecord *pRecord
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"read bytes: %d != %d", \
 			__LINE__, compress_get_binlog_filename(pReader, NULL),\
 			pReader->binlog_offset, read_bytes, full_key_len);
@@ -515,7 +515,7 @@ static int compress_binlog_read(CompressReader *pReader, CompressRecord *pRecord
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"lseek from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"errno: %d, error info: %s", __LINE__, \
 			compress_get_binlog_filename(pReader, NULL), \
 			pReader->binlog_offset, errno, STRERROR(errno));
@@ -578,7 +578,7 @@ static int compress_write_to_binlog(CompressWalkArg *pWalkArg, CompressRawRow *p
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"lseek from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"errno: %d, error info: %s", __LINE__, \
 			compress_get_binlog_filename(pWalkArg->pReader, NULL), \
 			pRow->offset, errno, STRERROR(errno));
@@ -591,7 +591,7 @@ static int compress_write_to_binlog(CompressWalkArg *pWalkArg, CompressRawRow *p
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"errno: %d, error info: %s", __LINE__, \
 			compress_get_binlog_filename(pWalkArg->pReader, NULL), \
 			pRow->offset, errno, STRERROR(errno));
@@ -603,7 +603,7 @@ static int compress_write_to_binlog(CompressWalkArg *pWalkArg, CompressRawRow *p
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"write to new binlog file \"%s.new\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"errno: %d, error info: %s", __LINE__, \
 			compress_get_binlog_filename(pWalkArg->pReader, NULL), \
 			pRow->offset, errno, STRERROR(errno));
@@ -676,7 +676,7 @@ static int compress_binlog_file(CompressReader *pReader)
 		base64_encode_ex(&gc_base64_context, full_key, full_key_len, \
 				base64_key, &base64_key_len, false);
 
-		buff_len = sprintf(buff, "%s %d %c "INT64_PRINTF_FORMAT" %d\n", \
+		buff_len = sprintf(buff, "%s %d %c %"PRId64" %d\n", \
 			base64_key, (int)record.expires, record.op_type, \
 			record.offset, record.record_length);
 		if (write(tmp_fd, buff, buff_len) != buff_len)
@@ -787,7 +787,7 @@ static int compress_binlog_file(CompressReader *pReader)
 			break;
 		}
 
-		item_count=sscanf(buff, "%s %d %c "INT64_PRINTF_FORMAT" %d", \
+		item_count=sscanf(buff, "%s %d %c %"PRId64" %d", \
 			current_row.key, (int *)&current_row.expires, \
 			&current_row.op_type, &current_row.offset, \
 			&current_row.record_length);

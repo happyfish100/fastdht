@@ -441,7 +441,7 @@ int db_inc(StoreHandle *pHandle, const char *pKey, const int key_len, \
 		n += inc;
 	}
 
-	*value_len = sprintf(pValue, INT64_PRINTF_FORMAT, n);
+	*value_len = sprintf(pValue, "%"PRId64, n);
 
 	memset(&key, 0, sizeof(key));
 	memset(&value, 0, sizeof(value));
@@ -503,7 +503,7 @@ int db_inc_ex(StoreHandle *pHandle, const char *pKey, const int key_len, \
 	}
 
 	int2buff(expires, pValue);
-	*value_len = 4 + sprintf(pValue+4, INT64_PRINTF_FORMAT, n);
+	*value_len = 4 + sprintf(pValue+4, "%"PRId64, n);
 
 	memset(&key, 0, sizeof(key));
 	memset(&value, 0, sizeof(value));
@@ -636,9 +636,9 @@ int db_clear_expired_keys(void *arg)
 
 	gettimeofday(&tv_end, NULL);
 
-	logInfo("clear expired keys, db %d, total count: "INT64_PRINTF_FORMAT \
-		", expired key count: "INT64_PRINTF_FORMAT \
-		", success count: "INT64_PRINTF_FORMAT \
+	logInfo("clear expired keys, db %d, total count: %"PRId64 \
+		", expired key count: %"PRId64 \
+		", success count: %"PRId64 \
 		", time used: %dms", db_index + 1, \
 		total_count, expired_count, success_count, \
 		(int)((tv_end.tv_sec - tv_start.tv_sec) * 1000 + \

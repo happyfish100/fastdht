@@ -1,8 +1,9 @@
 
-Version 2.01  2015-08-07
+Version 2.01  2016-01-24
  * use libfastcommon
  * bug fixed: should call memset to init g_thread_data
  * make.sh changed, you must upgrade libfastcommon to V1.20 or later
+ * compile pass in Mac OS
 
 Version 2.00  2014-02-02
  * discard libevent, use epoll in Linux, kqueue in FreeBSD, port in SunOS directly

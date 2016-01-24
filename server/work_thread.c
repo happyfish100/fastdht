@@ -1913,21 +1913,21 @@ static int deal_cmd_stat(struct fast_task_info *pTask)
 	p += sprintf(p, "max_connections=%d\n", g_max_connections);
 	p += sprintf(p, "curr_connections=%d\n", \
 			g_max_connections - free_queue_count());
-	p += sprintf(p, "total_set_count="INT64_PRINTF_FORMAT"\n", \
+	p += sprintf(p, "total_set_count=%"PRId64"\n", \
 			g_server_stat.total_set_count);
-	p += sprintf(p, "success_set_count="INT64_PRINTF_FORMAT"\n", \
+	p += sprintf(p, "success_set_count=%"PRId64"\n", \
 			g_server_stat.success_set_count);
-	p += sprintf(p, "total_inc_count="INT64_PRINTF_FORMAT"\n", \
+	p += sprintf(p, "total_inc_count=%"PRId64"\n", \
 			g_server_stat.total_inc_count);
-	p += sprintf(p, "success_inc_count="INT64_PRINTF_FORMAT"\n", \
+	p += sprintf(p, "success_inc_count=%"PRId64"\n", \
 			g_server_stat.success_inc_count);
-	p += sprintf(p, "total_delete_count="INT64_PRINTF_FORMAT"\n", \
+	p += sprintf(p, "total_delete_count=%"PRId64"\n", \
 			g_server_stat.total_delete_count);
-	p += sprintf(p, "success_delete_count="INT64_PRINTF_FORMAT"\n", \
+	p += sprintf(p, "success_delete_count=%"PRId64"\n", \
 			g_server_stat.success_delete_count);
-	p += sprintf(p, "total_get_count="INT64_PRINTF_FORMAT"\n", \
+	p += sprintf(p, "total_get_count=%"PRId64"\n", \
 			g_server_stat.total_get_count);
-	p += sprintf(p, "success_get_count="INT64_PRINTF_FORMAT"\n", \
+	p += sprintf(p, "success_get_count=%"PRId64"\n", \
 			g_server_stat.success_get_count);
 
 	if (g_store_type == FDHT_STORE_TYPE_MPOOL)
@@ -1949,13 +1949,13 @@ static int deal_cmd_stat(struct fast_task_info *pTask)
 
 		p += sprintf(p, "total_items=%d\n", hs.item_count);
 		p += sprintf(p, "bucket count=%d\n", hs.capacity);
-		p += sprintf(p, "used_bytes="INT64_PRINTF_FORMAT" (%.2f%%)\n",\
+		p += sprintf(p, "used_bytes=%"PRId64" (%.2f%%)\n",\
 			g_hash_array->bytes_used, \
 			(100.00 * g_hash_array->bytes_used) / \
 			g_hash_array->max_bytes);
-		p += sprintf(p, "max bytes="INT64_PRINTF_FORMAT" (100.00%%)\n",\
+		p += sprintf(p, "max bytes=%"PRId64" (100.00%%)\n",\
 			g_hash_array->max_bytes);
-		p += sprintf(p, "free bytes="INT64_PRINTF_FORMAT" (%.2f%%)\n", \
+		p += sprintf(p, "free bytes=%"PRId64" (%.2f%%)\n", \
 			g_hash_array->max_bytes - g_hash_array->bytes_used, \
 			(100.00 * (g_hash_array->max_bytes - \
 			g_hash_array->bytes_used)) / g_hash_array->max_bytes);

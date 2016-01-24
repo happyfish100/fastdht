@@ -751,7 +751,7 @@ int fdht_open_readable_binlog(BinLogReader *pReader)
 	    lseek(pReader->binlog_fd, pReader->binlog_offset, SEEK_SET) < 0)
 	{
 		logError("file: "__FILE__", line: %d, " \
-			"seek binlog file \"%s\" fail, file offset="INT64_PRINTF_FORMAT", " \
+			"seek binlog file \"%s\" fail, file offset=%"PRId64", " \
 			"errno: %d, error info: %s", \
 			__LINE__, full_filename, pReader->binlog_offset, \
 			errno, STRERROR(errno));
@@ -886,7 +886,7 @@ static int fdht_reader_init(FDHTServerInfo *pDestServer, \
 			iniFreeContext(&iniContext);
 			logError("file: "__FILE__", line: %d, " \
 				"in mark file \"%s\", " \
-				"binlog_offset: "INT64_PRINTF_FORMAT" < 0", \
+				"binlog_offset: %"PRId64" < 0", \
 				__LINE__, full_filename, \
 				pReader->binlog_offset);
 			return EINVAL;
@@ -967,12 +967,12 @@ static int fdht_write_to_mark_file(BinLogReader *pReader)
 
 	len = sprintf(buff, 
 		"%s=%d\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n"  \
+		"%s=%"PRId64"\n"  \
 		"%s=%d\n"  \
 		"%s=%d\n"  \
 		"%s=%d\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n", \
+		"%s=%"PRId64"\n"  \
+		"%s=%"PRId64"\n", \
 		MARK_ITEM_BINLOG_FILE_INDEX, pReader->binlog_index, \
 		MARK_ITEM_BINLOG_FILE_OFFSET, pReader->binlog_offset, \
 		MARK_ITEM_NEED_SYNC_OLD, pReader->need_sync_old, \
@@ -998,7 +998,7 @@ static int rewind_to_prev_rec_end(BinLogReader *pReader, \
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"seek binlog file \"%s\"fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"errno: %d, error info: %s", \
 			__LINE__, get_binlog_readable_filename(pReader, NULL), \
 			pReader->binlog_offset, \
@@ -1278,7 +1278,7 @@ int fdht_binlog_write(const time_t timestamp, const char op_type, \
 	{ \
 		logError("file: "__FILE__", line: %d, " \
 			"item \"%s\" in binlog file \"%s\" " \
-			"is invalid, file offset: "INT64_PRINTF_FORMAT", " \
+			"is invalid, file offset: %"PRId64", " \
 			"%s: %d <= 0", __LINE__, caption, \
 			get_binlog_readable_filename(pReader, NULL), \
 			pReader->binlog_offset, caption, value); \
@@ -1289,7 +1289,7 @@ int fdht_binlog_write(const time_t timestamp, const char op_type, \
 	{ \
 		logError("file: "__FILE__", line: %d, " \
 			"item \"%s\" in binlog file \"%s\" " \
-			"is invalid, file offset: "INT64_PRINTF_FORMAT", " \
+			"is invalid, file offset: %"PRId64", " \
 			"%s: %d > %d", __LINE__, caption, \
 			get_binlog_readable_filename(pReader, NULL), \
 			pReader->binlog_offset, caption, value, max_length); \
@@ -1352,7 +1352,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 		{
 			logError("file: "__FILE__", line: %d, " \
 				"read from binlog file \"%s\" fail, " \
-				"file offset: "INT64_PRINTF_FORMAT", " \
+				"file offset: %"PRId64", " \
 				"errno: %d, error info: %s", __LINE__, \
 				get_binlog_readable_filename(pReader, NULL), \
 				pReader->binlog_offset, errno, STRERROR(errno));
@@ -1369,7 +1369,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logWarning("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"read bytes: %d != %d", \
 			__LINE__, get_binlog_readable_filename(pReader, NULL),\
 			pReader->binlog_offset, read_bytes, \
@@ -1393,7 +1393,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"data format invalid, binlog file: %s, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"read item: %d != 8", \
 			__LINE__, get_binlog_readable_filename(pReader, NULL),\
 			pReader->binlog_offset, nItem);
@@ -1405,7 +1405,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"invalid timestamp: %d, binlog file: %s, " \
-			"file offset: "INT64_PRINTF_FORMAT,  \
+			"file offset: %"PRId64,  \
 			__LINE__, (int)pRecord->timestamp, \
 			get_binlog_readable_filename(pReader, NULL), \
 			pReader->binlog_offset);
@@ -1420,7 +1420,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"invalid op type: %c(0x%02X), binlog file: %s, " \
-			"file offset: "INT64_PRINTF_FORMAT,  \
+			"file offset: %"PRId64,  \
 			__LINE__, pRecord->op_type, pRecord->op_type, \
 			get_binlog_readable_filename(pReader, NULL), \
 			pReader->binlog_offset);
@@ -1441,7 +1441,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"data format invalid, binlog file: %s, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"key length: %d is invalid", \
 			__LINE__, get_binlog_readable_filename(pReader, NULL),\
 			pReader->binlog_offset, pRecord->key_info.key_len);
@@ -1453,7 +1453,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"item \"value length\" in binlog file \"%s\" " \
-			"is invalid, file offset: "INT64_PRINTF_FORMAT", " \
+			"is invalid, file offset: %"PRId64", " \
 			"value length: %d < 0", \
 			__LINE__, get_binlog_readable_filename(pReader, NULL), \
 			pReader->binlog_offset, pRecord->value.length);
@@ -1469,7 +1469,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"errno: %d, error info: %s", __LINE__, \
 			get_binlog_readable_filename(pReader, NULL), \
 			pReader->binlog_offset, errno, STRERROR(errno));
@@ -1482,7 +1482,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logWarning("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"read bytes: %d != %d", \
 			__LINE__, get_binlog_readable_filename(pReader, NULL),\
 			pReader->binlog_offset, read_bytes, full_key_len);
@@ -1537,7 +1537,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"errno: %d, error info: %s", __LINE__, \
 			get_binlog_readable_filename(pReader, NULL), \
 			pReader->binlog_offset, errno, STRERROR(errno));
@@ -1550,7 +1550,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logWarning("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"read bytes: %d != %d", \
 			__LINE__, get_binlog_readable_filename(pReader, NULL),\
 			pReader->binlog_offset, read_bytes, \
@@ -1563,7 +1563,7 @@ int fdht_binlog_read(BinLogReader *pReader, \
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"read from binlog file \"%s\" fail, " \
-			"file offset: "INT64_PRINTF_FORMAT", " \
+			"file offset: %"PRId64", " \
 			"record not ended with new line char (\\n)", __LINE__, \
 			get_binlog_readable_filename(pReader, NULL), \
 			pReader->binlog_offset);

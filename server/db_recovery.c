@@ -210,7 +210,7 @@ static int fdht_write_to_db_recovery_mark_file(const time_t timestamp, \
 
 	len = sprintf(buff, \
 		"%s=%d\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n"  \
+		"%s=%"PRId64"\n"  \
 		"%s=%d\n"  \
 		"%s=%s\n"  \
 		"%s=%d ms\n",  \
@@ -388,8 +388,8 @@ static int fdht_recover_data(const int start_binlog_index, \
 	}
 
 	logInfo("file: "__FILE__", line: %d, " \
-		"recover data, scan row count: "INT64_PRINTF_FORMAT", " \
-		"success recover count: "INT64_PRINTF_FORMAT, \
+		"recover data, scan row count: %"PRId64", " \
+		"success recover count: %"PRId64, \
 		__LINE__, reader.scan_row_count, reader.sync_row_count);
 
 	return result != ENOENT ? result : 0;

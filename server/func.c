@@ -585,7 +585,7 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 			if ((nPageSize < 512) || (nPageSize > 64 * 1024))
 			{
 				logError("file: "__FILE__", line: %d, " \
-					"page_size: "INT64_PRINTF_FORMAT \
+					"page_size: %"PRId64 \
 					"is invalid, which < %d or > %d!", \
 					__LINE__, nPageSize, 512, 64 * 1024);
 				result = EINVAL;
@@ -1232,14 +1232,14 @@ int fdht_write_to_stat_file()
 
 	memcpy(&fdht_last_stat, &g_server_stat, sizeof(FDHTServerStat));
 	len = sprintf(buff, 
-		"%s="INT64_PRINTF_FORMAT"\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n"  \
-		"%s="INT64_PRINTF_FORMAT"\n", \
+		"%s=%"PRId64"\n"  \
+		"%s=%"PRId64"\n"  \
+		"%s=%"PRId64"\n"  \
+		"%s=%"PRId64"\n"  \
+		"%s=%"PRId64"\n"  \
+		"%s=%"PRId64"\n"  \
+		"%s=%"PRId64"\n"  \
+		"%s=%"PRId64"\n", \
 		STAT_ITEM_TOTAL_SET, g_server_stat.total_set_count, \
 		STAT_ITEM_SUCCESS_SET, g_server_stat.success_set_count, \
 		STAT_ITEM_TOTAL_GET, g_server_stat.total_get_count, \
