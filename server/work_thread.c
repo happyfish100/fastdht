@@ -65,8 +65,10 @@ static int deal_cmd_get_sub_keys(struct fast_task_info *pTask);
 
 int work_thread_init()
 {
+#define ALLOC_CONNECTIONS_ONCE 1024
 	int result;
-    int bytes;
+	int bytes;
+	int init_connections;
 	struct nio_thread_data *pThreadData;
 	struct nio_thread_data *pDataEnd;
 	pthread_t tid;
@@ -93,13 +95,15 @@ int work_thread_init()
 		return result;
 	}
 
-	if ((result=free_queue_init(g_max_connections, g_min_buff_size,
-                g_max_pkg_size, 0)) != 0)
+	init_connections = g_max_connections < ALLOC_CONNECTIONS_ONCE ?
+		g_max_connections : ALLOC_CONNECTIONS_ONCE;
+	if ((result=free_queue_init_ex(g_max_connections, init_connections,
+		ALLOC_CONNECTIONS_ONCE, g_min_buff_size, g_max_pkg_size, 0)) != 0)
 	{
 		return result;
 	}
 
-    bytes = sizeof(struct nio_thread_data) * g_max_threads;
+	bytes = sizeof(struct nio_thread_data) * g_max_threads;
 	g_thread_data = (struct nio_thread_data *)malloc(bytes);
 	if (g_thread_data == NULL)
 	{
@@ -108,7 +112,7 @@ int work_thread_init()
 			__LINE__, bytes, errno, STRERROR(errno));
 		return errno != 0 ? errno : ENOMEM;
 	}
-    memset(g_thread_data, 0, bytes);
+	memset(g_thread_data, 0, bytes);
 
 	g_thread_count = 0;
 	pDataEnd = g_thread_data + g_max_threads;
