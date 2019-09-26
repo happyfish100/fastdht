@@ -135,8 +135,8 @@ if [ "$1" = "install" ]; then
         cp -f conf/fdht_client.conf $TARGET_CONF_PATH
       fi
 
-      cp -f init.d/fdhtd /etc/rc.d/init.d/
-      /sbin/chkconfig --add fdhtd
+      cp -f init.d/fdhtd $TARGET_INIT_PATH
+#      /sbin/chkconfig --add fdhtd
     fi
   fi
 fi
