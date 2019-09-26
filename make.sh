@@ -18,7 +18,7 @@ else
  OS_BITS=32
 fi
 
-TARGET_PREFIX=/usr/local
+TARGET_PREFIX=$DESTDIR/usr/local
 TARGET_CONF_PATH=/etc/fdht
 
 #WITH_LINUX_SERVICE=1
@@ -127,11 +127,11 @@ if [ "$1" = "install" ]; then
 
   if [ "$uname" = "Linux" ]; then
     if [ "$WITH_LINUX_SERVICE" = "1" ]; then
-      if [ ! -d /etc/fdht ]; then
-        mkdir -p /etc/fdht
-        cp -f conf/fdhtd.conf /etc/fdht/
-        cp -f conf/fdht_servers.conf /etc/fdht/
-        cp -f conf/fdht_client.conf /etc/fdht/
+      if [ ! -d $TARGET_CONF_PATH ]; then
+        mkdir -p $TARGET_CONF_PATH
+        cp -f conf/fdhtd.conf $TARGET_CONF_PATH
+        cp -f conf/fdht_servers.conf $TARGET_CONF_PATH
+        cp -f conf/fdht_client.conf $TARGET_CONF_PATH
       fi
 
       cp -f init.d/fdhtd /etc/rc.d/init.d/
