@@ -1,4 +1,8 @@
 
+Version 2.02  2022-05-27
+ * use libfastcommon V1.56
+   NOTE: you MUST upgrade libfastcommon to V1.56 or later
+
 Version 2.01  2016-01-24
  * use libfastcommon
  * bug fixed: should call memset to init g_thread_data

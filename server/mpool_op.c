@@ -35,12 +35,12 @@ int mp_init(StoreHandle **ppHandle, const u_int64_t nCacheSize)
 		return errno != 0 ? errno : ENOMEM;
 	}
 
-	if ((result=hash_init_ex(g_hash_array, Time33Hash, g_mpool_init_capacity,\
+	if ((result=fc_hash_init_ex(g_hash_array, Time33Hash, g_mpool_init_capacity,\
 		g_mpool_load_factor, nCacheSize, true)) != 0)
 	{
 		return result;
 	}
-	hash_set_locks(g_hash_array, g_mpool_htable_lock_count);
+	fc_hash_set_locks(g_hash_array, g_mpool_htable_lock_count);
 	have_htable_lock = g_hash_array->lock_count > 0;
 	*ppHandle = g_hash_array;
 
@@ -118,7 +118,7 @@ int mp_get(StoreHandle *pHandle, const char *pKey, const int key_len, \
 
 	do
 	{
-		hash_data = hash_find_ex(g_hash_array, pKey, key_len);
+		hash_data = fc_hash_find_ex(g_hash_array, pKey, key_len);
 		if (hash_data == NULL)
 		{
 			result = ENOENT;
@@ -172,7 +172,7 @@ static int mp_do_set(StoreHandle *pHandle, const char *pKey, const int key_len,\
 
 	for (i=0; i<2; i++)
 	{
-		result = hash_insert_ex(pHandle, pKey, key_len, \
+		result = fc_hash_insert_ex(pHandle, pKey, key_len, \
 				(void *)pValue, value_len, true);
 		if (result < 0)
 		{
@@ -235,7 +235,7 @@ int mp_partial_set(StoreHandle *pHandle, const char *pKey, const int key_len, \
 
 	RWLOCK_WRITE_LOCK(lock_result)
 
-	result = hash_partial_set(g_hash_array, pKey, key_len,
+	result = fc_hash_partial_set(g_hash_array, pKey, key_len,
 			pValue, offset, value_len);
 
 	RWLOCK_UNLOCK(lock_result)
@@ -252,7 +252,7 @@ int mp_delete(StoreHandle *pHandle, const char *pKey, const int key_len)
 	
 	RWLOCK_WRITE_LOCK(lock_result)
 
-	result = hash_delete(g_hash_array, pKey, key_len);
+	result = fc_hash_delete(g_hash_array, pKey, key_len);
 	if (result == 0)
 	{
 		g_server_stat.success_delete_count++;
@@ -273,7 +273,7 @@ int mp_inc(StoreHandle *pHandle, const char *pKey, const int key_len, \
 
 	RWLOCK_WRITE_LOCK(lock_result)
 
-	result = hash_inc(g_hash_array, pKey, key_len, inc,
+	result = fc_hash_inc(g_hash_array, pKey, key_len, inc,
 			pValue, value_len);
 	if (result == 0)
 	{
@@ -335,7 +335,7 @@ int mp_inc_ex(StoreHandle *pHandle, const char *pKey, const int key_len, \
 
 	RWLOCK_WRITE_LOCK(lock_result)
 
-	result = hash_inc_ex(g_hash_array, pKey, key_len, inc, pValue,
+	result = fc_hash_inc_ex(g_hash_array, pKey, key_len, inc, pValue,
 		value_len, mp_inc_value, (void *)((long)expires));
 	if (result == 0)
 	{
@@ -404,10 +404,10 @@ int mp_clear_expired_keys(void *arg)
 	for (ppBucket=g_hash_array->buckets; ppBucket<bucket_end; ppBucket++)
 	{
 		bucket_index = ppBucket - g_hash_array->buckets;
-		hash_bucket_lock(g_hash_array, bucket_index);
+		fc_hash_bucket_lock(g_hash_array, bucket_index);
 		if (*ppBucket == NULL)
 		{
-			hash_bucket_unlock(g_hash_array, bucket_index);
+			fc_hash_bucket_unlock(g_hash_array, bucket_index);
 			continue;
 		}
 
@@ -449,7 +449,7 @@ int mp_clear_expired_keys(void *arg)
 		{
 			previous->next = NULL;
 		}
-		hash_bucket_unlock(g_hash_array, bucket_index);
+		fc_hash_bucket_unlock(g_hash_array, bucket_index);
 	}
 
 	RWLOCK_UNLOCK(lock_result)

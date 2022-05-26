@@ -1,0 +1,73 @@
+# Makefile.in
+server/Makefile
+client/Makefile
+tool/Makefile
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dSYM
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.out
+server/fdhtd
+client/fdht_batch_test
+client/fdht_delete
+client/fdht_get
+client/fdht_set
+client/fdht_test
+client/fdht_test_get
+client/fdht_test_set
+client/fdht_test_thread
+client/libfdhtclient.so.1
+tool/fdht_compress
+
+# other
+*.swp
+*.swo
+php_client/.deps
+php_client/.libs/
+
+php_client/Makefile
+php_client/Makefile.fragments
+php_client/Makefile.global
+php_client/Makefile.objects
+php_client/acinclude.m4
+php_client/aclocal.m4
+php_client/autom4te.cache/
+php_client/build/
+php_client/config.guess
+php_client/config.h
+php_client/config.h.in
+php_client/config.log
+php_client/config.nice
+php_client/config.status
+php_client/config.sub
+php_client/configure
+php_client/configure.ac
+php_client/install-sh
+php_client/libtool
+php_client/ltmain.sh
+php_client/missing
+php_client/mkinstalldirs
+php_client/run-tests.php

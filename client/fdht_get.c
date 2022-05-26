@@ -51,7 +51,6 @@ int main(int argc, char *argv[])
 	char object_buff[FDHT_MAX_NAMESPACE_LEN + FDHT_MAX_OBJECT_ID_LEN + 2];
 	char key_seperator;
 	int result;
-	int expires;
 	int key_count;
 	int success_count;
 	int fail_count;
@@ -172,7 +171,6 @@ int main(int argc, char *argv[])
 		return ENOMEM;
 	}
 	
-	expires = FDHT_EXPIRES_NEVER;
 	memset(&key_info, 0, sizeof(key_info));
 	keys = split(keys_buff, key_seperator, 0, &key_count);
 

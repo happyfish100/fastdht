@@ -1,3 +1,9 @@
+GCC_VERSION=$(gcc -dM -E -  < /dev/null | grep -w __GNUC__ | awk '{print $NF;}')
+if [ -z "$GCC_VERSION" ]; then
+  echo -e "gcc not found, please install gcc first\n" 1>&2
+  exit 2
+fi
+
 tmp_src_filename=fdht_check_bits.c
 cat <<EOF > $tmp_src_filename
 #include <stdio.h>
@@ -24,7 +30,13 @@ TARGET_CONF_PATH=/etc/fdht
 #WITH_LINUX_SERVICE=1
 DEBUG_FLAG=1
 
-CFLAGS='-Wall -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE'
+export CC=gcc
+CFLAGS='-Wall'
+if [ -n "$GCC_VERSION" ] && [ $GCC_VERSION -ge 7 ]; then
+  CFLAGS="$CFLAGS -Wformat-truncation=0 -Wformat-overflow=0"
+fi
+
+CFLAGS='$CFLAGS -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE'
 if [ "$DEBUG_FLAG" = "1" ]; then
   CFLAGS="$CFLAGS -g -O -DDEBUG_FLAG"
 else
@@ -40,10 +52,8 @@ elif [ "$uname" = "FreeBSD" ]; then
 elif [ "$uname" = "SunOS" ]; then
   CFLAGS="$CFLAGS -D_THREAD_SAFE"
   LIBS="$LIBS -lsocket -lnsl -lresolv"
-  export CC=gcc
 elif [ "$uname" = "AIX" ]; then
   CFLAGS="$CFLAGS -D_THREAD_SAFE"
-  export CC=gcc
 elif [ "$uname" = "HP-UX" ]; then
   CFLAGS="$CFLAGS"
 fi

@@ -1940,11 +1940,11 @@ static int deal_cmd_stat(struct fast_task_info *pTask)
 		HashStat hs;
 		int stats[STAT_MAX_NUM];
 
-		if ((result=hash_stat(g_hash_array, &hs, stats, \
+		if ((result=fc_hash_stat(g_hash_array, &hs, stats, \
 					STAT_MAX_NUM)) != 0)
 		{
 			logError("file: "__FILE__", line: %d, " \
-				"client ip: %s, call hash_stat fail, " \
+				"client ip: %s, call fc_hash_stat fail, " \
 				"errno: %d, error info: %s", __LINE__, \
 				pTask->client_ip, result, STRERROR(result));
 			pTask->length = sizeof(FDHTProtoHeader);
