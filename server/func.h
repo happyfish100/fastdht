@@ -42,6 +42,12 @@ int start_dl_detect_thread();
 
 int fdht_stat_file_sync_func(void *args);
 
+// 判断当前服务器是否存在IPv4地址
+bool checkHostHasIPv4Addr();
+
+// 判断当前服务器是否存在IPv6地址
+bool checkHostHasIPv6Addr();
+
 #ifdef __cplusplus
 }
 #endif

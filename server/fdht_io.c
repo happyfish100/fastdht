@@ -60,7 +60,7 @@ void recv_notify_read(int sock, short event, void *arg)
 	struct nio_thread_data *pThreadData;
 	struct fast_task_info *pTask;
 	char szClientIp[IP_ADDRESS_SIZE];
-	in_addr_t client_addr;
+	in_addr_64_t client_addr;
 
 	while (1)
 	{
@@ -87,11 +87,11 @@ void recv_notify_read(int sock, short event, void *arg)
 		}
 
 		client_addr = getPeerIpaddr(incomesock, \
-				szClientIp, IP_ADDRESS_SIZE);
+				szClientIp, IP_ADDRESS_SIZE); 
 		if (g_allow_ip_count >= 0)
 		{
 			if (bsearch(&client_addr, g_allow_ip_addrs, \
-					g_allow_ip_count, sizeof(in_addr_t), \
+					g_allow_ip_count, sizeof(in_addr_64_t), \
 					cmp_by_ip_addr_t) == NULL)
 			{
 				logError("file: "__FILE__", line: %d, " \

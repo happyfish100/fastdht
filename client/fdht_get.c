@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 	{
 		keys_arg = argv[3];
 		snprintf(object_buff, sizeof(object_buff), "%s", argv[2]);
-		if (splitEx(object_buff, ':', parts2, 2) != 2)
+		if (parseAddress(object_buff, parts2) !=2 )
 		{
 			usage(argv[0]);
 			return EINVAL;

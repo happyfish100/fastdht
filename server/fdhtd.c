@@ -117,7 +117,22 @@ int main(int argc, char *argv[])
 		return errno;
 	}
 
-	sock = socketServer(bind_addr, g_server_port, &result);
+    // 如果bind_addr未设置
+    if(strlen(bind_addr) == 0){
+
+        // 如果当前服务不存在IPv4地址，但是存在IPv6地址，则自动绑定IPv6地址
+        if(!checkHostHasIPv4Addr() && checkHostHasIPv6Addr()){
+            sock = socketServerIPv6(bind_addr, g_server_port, &result);
+        }else{
+            sock = socketServer(bind_addr, g_server_port, &result);
+        }
+    }else if (is_ipv6_addr(bind_addr))     // 通过判断IP地址是IPv4或者IPv6，根据结果进行初始化
+    {
+        sock = socketServerIPv6(bind_addr, g_server_port, &result);
+    }else{
+        sock = socketServer(bind_addr, g_server_port, &result);
+    }
+
 	if (sock < 0)
 	{
 		fdht_func_destroy();
