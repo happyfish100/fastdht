@@ -1667,8 +1667,13 @@ static void* fdht_sync_thread_entrance(void* arg)
 		conn_result = 0;
 		while (g_continue_flag)
 		{
-			fdht_server.sock = \
-				socket(AF_INET, SOCK_STREAM, 0);
+			if(strchr(fdht_server.ip_addr, ':') != NULL){
+				fdht_server.sock = \
+					socket(AF_INET6, SOCK_STREAM, 0);
+			}else{
+				fdht_server.sock = \
+					socket(AF_INET, SOCK_STREAM, 0);
+			}
 			if(fdht_server.sock < 0)
 			{
 				logError("file: "__FILE__", line: %d, " \

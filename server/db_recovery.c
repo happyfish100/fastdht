@@ -313,7 +313,8 @@ static int fdht_recover_data(const int start_binlog_index, \
 		IP_ADDRESS_SIZE * g_local_host_ip_count;
         for (p=g_local_host_ip_addrs; p<pEnd; p+=IP_ADDRESS_SIZE)
 	{
-		if (strcmp(p, "127.0.0.1") != 0)
+		if (strcmp(p, "127.0.0.1") != 0 &&
+		     strcmp(p, "::1") != 0)
 		{
 			strcpy(reader.ip_addr, p);
 			break;

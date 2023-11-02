@@ -56,7 +56,7 @@ int g_sync_until_timestamp = 0;
 int g_sync_done_timestamp = 0;
 
 int g_allow_ip_count = 0;  /* -1 means match any ip address */
-in_addr_t *g_allow_ip_addrs = NULL;  /* sorted array, asc order */
+in_addr_64_t *g_allow_ip_addrs = NULL;  /* sorted array, asc order */
 
 time_t g_server_start_time = 0;
 int g_store_type = FDHT_STORE_TYPE_BDB;

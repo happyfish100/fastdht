@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1290,3 +1291,55 @@ int fdht_stat_file_sync_func(void *args)
 	return fdht_write_to_stat_file();
 }
 
+
+// 判断当前服务器是否存在IPv4地址
+bool checkHostHasIPv4Addr(){
+    struct ifaddrs *ifaddr, *ifa;
+    if (getifaddrs(&ifaddr) == -1) {
+        return false;
+    }
+
+    bool hasIPv4 = false;
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL) {
+            continue;
+        }
+        if (strcmp(ifa->ifa_name, "lo") == 0) { // 排除lo接口
+            continue;
+        }
+        if (ifa->ifa_addr->sa_family == AF_INET) {
+            hasIPv4 = true;
+            break;
+        }
+    }
+
+    freeifaddrs(ifaddr);
+
+    return hasIPv4;
+}
+
+// 判断当前服务器是否存在IPv6地址
+bool checkHostHasIPv6Addr(){
+    struct ifaddrs *ifaddr, *ifa;
+    if (getifaddrs(&ifaddr) == -1) {
+        return false;
+    }
+
+    bool hasIPv6 = false;
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL) {
+            continue;
+        }
+        if (strcmp(ifa->ifa_name, "lo") == 0) { // 排除lo接口
+            continue;
+        }
+        if (ifa->ifa_addr->sa_family == AF_INET6) {
+             hasIPv6 = true;
+            break;
+        }
+    }
+
+    freeifaddrs(ifaddr);
+
+    return hasIPv6;
+}
