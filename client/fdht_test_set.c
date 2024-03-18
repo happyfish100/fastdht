@@ -19,12 +19,12 @@
 #include <fcntl.h>
 #include <netinet/tcp.h>
 #include <sys/types.h>
-#include "fdht_global.h"
-#include "sockopt.h"
-#include "logger.h"
-#include "shared_func.h"
+#include "fastcommon/sockopt.h"
+#include "fastcommon/logger.h"
+#include "fastcommon/shared_func.h"
 #include "fdht_types.h"
 #include "fdht_proto.h"
+#include "fdht_global.h"
 #include "fdht_func.h"
 #include "fdht_client.h"
 

@@ -21,17 +21,17 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
-#include "shared_func.h"
-#include "sched_thread.h"
-#include "logger.h"
-#include "global.h"
-#include "ini_file_reader.h"
-#include "sockopt.h"
+#include "fastcommon/shared_func.h"
+#include "fastcommon/sched_thread.h"
+#include "fastcommon/logger.h"
+#include "fastcommon/ini_file_reader.h"
+#include "fastcommon/sockopt.h"
+#include "fastcommon/fast_task_queue.h"
+#include "fastcommon/ioevent_loop.h"
 #include "fdht_global.h"
 #include "fdht_proto.h"
-#include "fast_task_queue.h"
 #include "work_thread.h"
-#include "ioevent_loop.h"
+#include "global.h"
 #include "fdht_io.h"
 
 static void client_sock_read(int sock, short event, void *arg);
@@ -109,7 +109,7 @@ void recv_notify_read(int sock, short event, void *arg)
 			continue;
 		}
 
-		pTask = free_queue_pop();
+		pTask = free_queue_pop(&g_free_queue);
 		if (pTask == NULL)
 		{
 			logError("file: "__FILE__", line: %d, " \
@@ -158,7 +158,7 @@ static int set_send_event(struct fast_task_info *pTask)
 
 int send_add_event(struct fast_task_info *pTask)
 {
-	pTask->offset = 0;
+	pTask->send.ptr->offset = 0;
 
 	/* direct send */
 	client_sock_write(pTask->event.fd, IOEVENT_WRITE, pTask);
@@ -175,8 +175,8 @@ static void client_sock_read(int sock, short event, void *arg)
 
 	if (event & IOEVENT_TIMEOUT)
 	{
-		if (pTask->offset == 0 && \
-			((FDHTProtoHeader *)pTask->data)->keep_alive)
+		if (pTask->send.ptr->offset == 0 && \
+			((FDHTProtoHeader *)pTask->send.ptr->data)->keep_alive)
 		{
 			pTask->event.timer.expires = g_current_time +
 				g_fdht_network_timeout;
@@ -189,7 +189,7 @@ static void client_sock_read(int sock, short event, void *arg)
 				"client ip: %s, recv timeout, " \
 				"recv offset: %d, expect length: %d", \
 				__LINE__, pTask->client_ip, \
-				pTask->offset, pTask->length);
+				pTask->send.ptr->offset, pTask->send.ptr->length);
 
 			task_finish_clean_up(pTask);
 		}
@@ -212,39 +212,39 @@ static void client_sock_read(int sock, short event, void *arg)
 		fast_timer_modify(&pTask->thread_data->timer,
 			&pTask->event.timer, g_current_time +
 			g_fdht_network_timeout);
-		if (pTask->length == 0) //recv header
+		if (pTask->send.ptr->length == 0) //recv header
 		{
-			recv_bytes = sizeof(FDHTProtoHeader) - pTask->offset;
+			recv_bytes = sizeof(FDHTProtoHeader) - pTask->send.ptr->offset;
 		}
 		else
 		{
-			recv_bytes = pTask->length - pTask->offset;
+			recv_bytes = pTask->send.ptr->length - pTask->send.ptr->offset;
 		}
 
-		if (pTask->offset + recv_bytes > pTask->size)
+		if (pTask->send.ptr->offset + recv_bytes > pTask->send.ptr->size)
 		{
 			char *pTemp;
 
-			pTemp = pTask->data;
-			pTask->data = realloc(pTask->data, \
-				pTask->size + recv_bytes);
-			if (pTask->data == NULL)
+			pTemp = pTask->send.ptr->data;
+			pTask->send.ptr->data = realloc(pTask->send.ptr->data, \
+				pTask->send.ptr->size + recv_bytes);
+			if (pTask->send.ptr->data == NULL)
 			{
 				logError("file: "__FILE__", line: %d, " \
 					"malloc failed, " \
 					"errno: %d, error info: %s", \
 					__LINE__, errno, STRERROR(errno));
 
-				pTask->data = pTemp;  //restore old data
+				pTask->send.ptr->data = pTemp;  //restore old data
 
 				task_finish_clean_up(pTask);
 				return;
 			}
 
-			pTask->size += recv_bytes;
+			pTask->send.ptr->size += recv_bytes;
 		}
 
-		bytes = recv(sock, pTask->data + pTask->offset, recv_bytes, 0);
+		bytes = recv(sock, pTask->send.ptr->data + pTask->send.ptr->offset, recv_bytes, 0);
 		if (bytes < 0)
 		{
 			if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -272,41 +272,41 @@ static void client_sock_read(int sock, short event, void *arg)
 			return;
 		}
 
-		if (pTask->length == 0) //header
+		if (pTask->send.ptr->length == 0) //header
 		{
-			if (pTask->offset + bytes < sizeof(FDHTProtoHeader))
+			if (pTask->send.ptr->offset + bytes < sizeof(FDHTProtoHeader))
 			{
-				pTask->offset += bytes;
+				pTask->send.ptr->offset += bytes;
 				return;
 			}
 
-			pTask->length = buff2int(((FDHTProtoHeader *) \
-						pTask->data)->pkg_len);
-			if (pTask->length < 0)
+			pTask->send.ptr->length = buff2int(((FDHTProtoHeader *) \
+						pTask->send.ptr->data)->pkg_len);
+			if (pTask->send.ptr->length < 0)
 			{
 				logError("file: "__FILE__", line: %d, " \
 					"client ip: %s, pkg length: %d < 0", \
 					__LINE__, pTask->client_ip, \
-					pTask->length);
+					pTask->send.ptr->length);
 				task_finish_clean_up(pTask);
 				return;
 			}
 
-			pTask->length += sizeof(FDHTProtoHeader);
-			if (pTask->length > g_max_pkg_size)
+			pTask->send.ptr->length += sizeof(FDHTProtoHeader);
+			if (pTask->send.ptr->length > g_max_pkg_size)
 			{
 				logError("file: "__FILE__", line: %d, " \
 					"client ip: %s, pkg length: %d > " \
 					"max pkg size: %d", __LINE__, \
-					pTask->client_ip, pTask->length, \
+					pTask->client_ip, pTask->send.ptr->length, \
 					g_max_pkg_size);
 				task_finish_clean_up(pTask);
 				return;
 			}
 		}
 
-		pTask->offset += bytes;
-		if (pTask->offset >= pTask->length) //recv done
+		pTask->send.ptr->offset += bytes;
+		if (pTask->send.ptr->offset >= pTask->send.ptr->length) //recv done
 		{
 			work_deal_task(pTask);
 			return;
@@ -347,8 +347,8 @@ static void client_sock_write(int sock, short event, void *arg)
 		fast_timer_modify(&pTask->thread_data->timer,
 			&pTask->event.timer, g_current_time +
 			g_fdht_network_timeout);
-		bytes = send(sock, pTask->data + pTask->offset, \
-				pTask->length - pTask->offset,  0);
+		bytes = send(sock, pTask->send.ptr->data + pTask->send.ptr->offset, \
+				pTask->send.ptr->length - pTask->send.ptr->offset,  0);
 		//printf("%08X sended %d bytes\n", (int)pTask, bytes);
 		if (bytes < 0)
 		{
@@ -379,13 +379,13 @@ static void client_sock_write(int sock, short event, void *arg)
 			return;
 		}
 
-		pTask->offset += bytes;
-		if (pTask->offset >= pTask->length)
+		pTask->send.ptr->offset += bytes;
+		if (pTask->send.ptr->offset >= pTask->send.ptr->length)
 		{
-			if (((FDHTProtoHeader *)pTask->data)->keep_alive)
+			if (((FDHTProtoHeader *)pTask->send.ptr->data)->keep_alive)
 			{
-				pTask->offset = 0;
-				pTask->length  = 0;
+				pTask->send.ptr->offset = 0;
+				pTask->send.ptr->length  = 0;
 
 				pTask->event.callback = client_sock_read;
 				if (ioevent_modify(&pTask->thread_data->ev_puller,

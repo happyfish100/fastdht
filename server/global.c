@@ -9,9 +9,9 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
-#include "logger.h"
-#include "sockopt.h"
-#include "shared_func.h"
+#include "fastcommon/logger.h"
+#include "fastcommon/sockopt.h"
+#include "fastcommon/shared_func.h"
 #include "global.h"
 
 volatile bool g_continue_flag = true;
@@ -67,4 +67,5 @@ int g_mpool_htable_lock_count = FDHT_DEFAULT_MPOOL_HTABLE_LOCK_COUNT;
 
 struct nio_thread_data *g_thread_data = NULL;
 int g_thread_stack_size = 1 * 1024 * 1024;
+struct fast_task_queue g_free_queue;
 

@@ -16,13 +16,13 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include "fastcommon/local_ip_func.h"
+#include "fastcommon/ioevent.h"
+#include "fastcommon/fast_timer.h"
+#include "fastcommon/fast_task_queue.h"
 #include "fdht_define.h"
 #include "fdht_global.h"
 #include "fdht_types.h"
-#include "local_ip_func.h"
-#include "ioevent.h"
-#include "fast_timer.h"
-#include "fast_task_queue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,6 +83,7 @@ extern int g_mpool_htable_lock_count;
 extern struct nio_thread_data *g_thread_data;
 
 extern int g_thread_stack_size;
+extern struct fast_task_queue g_free_queue;
 
 #ifdef __cplusplus
 }

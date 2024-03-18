@@ -7,9 +7,9 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <db.h>
-#include "logger.h"
-#include "shared_func.h"
-#include "sched_thread.h"
+#include "fastcommon/logger.h"
+#include "fastcommon/shared_func.h"
+#include "fastcommon/sched_thread.h"
 #include "db_op.h"
 #include "global.h"
 #include "func.h"

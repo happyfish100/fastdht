@@ -11,7 +11,7 @@
 #ifndef _FNIO_PROTO_H_
 #define _FNIO_PROTO_H_
 
-#include "common_define.h"
+#include "fastcommon/common_define.h"
 
 #define FNIO_PROTO_SOURCE_PROXY  'P'
 #define FNIO_PROTO_SOURCE_DATA   'D'
