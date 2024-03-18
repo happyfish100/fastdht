@@ -72,7 +72,7 @@ extern int g_sync_until_timestamp;
 extern int g_sync_done_timestamp;
 
 extern int g_allow_ip_count;  /* -1 means match any ip address */
-extern in_addr_t *g_allow_ip_addrs;  /* sorted array, asc order */
+extern in_addr_64_t *g_allow_ip_addrs;  /* sorted array, asc order */
 
 extern time_t g_server_start_time;
 extern int g_store_type;
