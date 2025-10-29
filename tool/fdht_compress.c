@@ -3,7 +3,7 @@
 *
 * FastDHT may be copied only under the terms of the GNU General
 * Public License V3.  Please visit the FastDHT Home Page 
-* http://www.csource.org/ for more detail.
+* http://www.fastken.com/ for more detail.
 **/
 
 #include <stdio.h>
