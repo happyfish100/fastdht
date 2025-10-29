@@ -66,6 +66,7 @@ static int deal_cmd_get_sub_keys(struct fast_task_info *pTask);
 int work_thread_init()
 {
 #define ALLOC_CONNECTIONS_ONCE 256
+    const char *service_name = "service";
 	int result;
 	int bytes;
 	struct nio_thread_data *pThreadData;
@@ -116,8 +117,8 @@ int work_thread_init()
 	pDataEnd = g_thread_data + g_max_threads;
 	for (pThreadData=g_thread_data; pThreadData<pDataEnd; pThreadData++)
 	{
-		if (ioevent_init(&pThreadData->ev_puller,
-			g_max_connections + 2, 1000, 0) != 0)
+		if (ioevent_init(&pThreadData->ev_puller, service_name,
+                    g_max_connections + 2, 1000, 0) != 0)
 		{
 			result  = errno != 0 ? errno : ENOMEM;
 			logError("file: "__FILE__", line: %d, " \
@@ -1397,7 +1398,7 @@ static int deal_cmd_sync_req(struct fast_task_info *pTask)
 	if (pFound == NULL)
 	{
 		logError("file: "__FILE__", line: %d, " \
-			"server: %s:%d not in my group!", \
+			"server: %s:%u not in my group!", \
 			__LINE__, pTask->client_ip, targetServer.port);
 		pTask->send.ptr->length = sizeof(FDHTProtoHeader);
 
@@ -1407,7 +1408,7 @@ static int deal_cmd_sync_req(struct fast_task_info *pTask)
 			logDebug("My group server list:");
 			for (k=0; k<g_group_server_count; k++)
 			{
-				logDebug("\t%d. %s:%d", k+1, \
+				logDebug("\t%d. %s:%u", k+1, \
 					g_group_servers[k].ip_addr, \
 					g_group_servers[k].port);
 			}
@@ -1435,7 +1436,7 @@ static int deal_cmd_sync_req(struct fast_task_info *pTask)
 	if (pFirstServer == pEnd) //impossible
 	{
 		logError("file: "__FILE__", line: %d, " \
-			"client: %s:%d, the ip addresses of all servers " \
+			"client: %s:%u, the ip addresses of all servers " \
 			"are local ip addresses.", __LINE__, \
 			pTask->client_ip, targetServer.port);
 		pTask->send.ptr->length = sizeof(FDHTProtoHeader);
@@ -1574,7 +1575,7 @@ static int deal_cmd_sync_done(struct fast_task_info *pTask)
 		src_port == g_sync_src_port))
 	{
 		logError("file: "__FILE__", line: %d, " \
-			"server: %s:%d not the sync src server!", \
+			"server: %s:%u not the sync src server!", \
 			__LINE__, pTask->client_ip, src_port);
 		return EINVAL;
 	}
@@ -1907,7 +1908,7 @@ static int deal_cmd_stat(struct fast_task_info *pTask)
 	p = pTask->send.ptr->data + sizeof(FDHTProtoHeader);
 	current_time = g_current_time;
 
-	p += sprintf(p, "server=%s:%d\n", g_local_host_ip_addrs+IP_ADDRESS_SIZE
+	p += sprintf(p, "server=%s:%u\n", g_local_host_ip_addrs+IP_ADDRESS_SIZE
 			 , g_server_port);
 	p += sprintf(p, "version=%d.%02d\n", g_fdht_version.major, g_fdht_version.minor);
 	p += sprintf(p, "uptime=%d\n", (int)(current_time-g_server_start_time));

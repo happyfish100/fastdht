@@ -98,7 +98,7 @@ static int fdht_report_sync_done(FDHTServerInfo *pDestServer)
 		sizeof(FDHTProtoHeader) + 4, g_fdht_network_timeout)) != 0)
 	{
 		logError("file: "__FILE__", line: %d, " \
-			"send data to server %s:%d fail, " \
+			"send data to server %s:%u fail, " \
 			"errno: %d, error info: %s", __LINE__, \
 			pDestServer->ip_addr, pDestServer->port, \
 			result, STRERROR(result));
@@ -110,7 +110,7 @@ static int fdht_report_sync_done(FDHTServerInfo *pDestServer)
 		0, &in_bytes)) != 0)
 	{
 		logError("file: "__FILE__", line: %d, " \
-			"recv data from server %s:%d fail, " \
+			"recv data from server %s:%u fail, " \
 			"errno: %d, error info: %s", __LINE__, \
 			pDestServer->ip_addr, pDestServer->port, \
 			result, STRERROR(result));
@@ -118,7 +118,7 @@ static int fdht_report_sync_done(FDHTServerInfo *pDestServer)
 	}
 
 	logInfo("file: "__FILE__", line: %d, " \
-		"sync old data to dest server: %s:%d done.", \
+		"sync old data to dest server: %s:%u done.", \
 		__LINE__, pDestServer->ip_addr, pDestServer->port);
 
 	return 0;
@@ -160,7 +160,7 @@ static int fdht_sync_req(FDHTServerInfo *pDestServer, BinLogReader *pReader)
 		sizeof(FDHTProtoHeader) + 13, g_fdht_network_timeout)) != 0)
 	{
 		logError("file: "__FILE__", line: %d, " \
-			"send data to server %s:%d fail, " \
+			"send data to server %s:%u fail, " \
 			"errno: %d, error info: %s", __LINE__, \
 			pDestServer->ip_addr, pDestServer->port, \
 			result, STRERROR(result));
@@ -175,7 +175,7 @@ static int fdht_sync_req(FDHTServerInfo *pDestServer, BinLogReader *pReader)
 	if (in_bytes != IP_ADDRESS_SIZE + 9)
 	{
 		logError("file: "__FILE__", line: %d, " \
-			"recv data from server %s:%d fail, " \
+			"recv data from server %s:%u fail, " \
 			"body length != %d", __LINE__, \
 			pDestServer->ip_addr, pDestServer->port, \
 			IP_ADDRESS_SIZE + 9);
@@ -186,7 +186,7 @@ static int fdht_sync_req(FDHTServerInfo *pDestServer, BinLogReader *pReader)
                        IP_ADDRESS_SIZE + 9, g_fdht_network_timeout)) != 0)
 	{
 		logError("file: "__FILE__", line: %d, " \
-			"recv data from server %s:%d fail, " \
+			"recv data from server %s:%u fail, " \
 			"errno: %d, error info: %s", __LINE__, \
 			pDestServer->ip_addr, pDestServer->port, \
 			result, STRERROR(result));
@@ -212,7 +212,7 @@ static int fdht_sync_req(FDHTServerInfo *pDestServer, BinLogReader *pReader)
 	formatDatetime(pReader->until_timestamp, "%Y-%m-%d %H:%M:%S", \
 			out_buff, sizeof(out_buff));
 	logInfo("file: "__FILE__", line: %d, " \
-		"sync dest server: %s:%d, src server: %s:%d, " \
+		"sync dest server: %s:%u, src server: %s:%u, " \
 		"until_timestamp=%s, sync_old_done=%d", \
 		__LINE__, pDestServer->ip_addr, pDestServer->port, \
 		sync_src_ip_addr, sync_src_port, \
@@ -423,7 +423,7 @@ static int create_sync_threads()
 	pEnd = g_group_servers + g_group_server_count;
 	for (pServer=g_group_servers; pServer<pEnd; pServer++)
 	{
-		//printf("%s:%d\n", pServer->ip_addr, pServer->port);
+		//printf("%s:%u\n", pServer->ip_addr, pServer->port);
 		if ((result=fdht_sync_thread_start(pServer)) != 0)
 		{
 			return result;
@@ -1704,7 +1704,7 @@ static void* fdht_sync_thread_entrance(void* arg)
 				}
 				logInfo("file: "__FILE__", line: %d, " \
 					"successfully connect to " \
-					"DHT server %s:%d%s", __LINE__, \
+					"DHT server %s:%u%s", __LINE__, \
 					fdht_server.ip_addr, \
 					fdht_server.port, szFailPrompt);
 				nContinuousFail = 0;
@@ -1714,7 +1714,7 @@ static void* fdht_sync_thread_entrance(void* arg)
 			if (previousCode != conn_result)
 			{
 				logError("file: "__FILE__", line: %d, " \
-					"connect to DHT server %s:%d fail" \
+					"connect to DHT server %s:%u fail" \
 					", errno: %d, error info: %s", \
 					__LINE__, \
 					fdht_server.ip_addr, fdht_server.port, \
@@ -1731,7 +1731,7 @@ static void* fdht_sync_thread_entrance(void* arg)
 		if (nContinuousFail > 0)
 		{
 			logError("file: "__FILE__", line: %d, " \
-				"connect to DHT server %s:%d fail, " \
+				"connect to DHT server %s:%u fail, " \
 				"try count: %d, errno: %d, error info: %s", \
 				__LINE__, fdht_server.ip_addr, \
 				fdht_server.port, nContinuousFail, \
@@ -1941,7 +1941,7 @@ static int fdht_sync_thread_start(const FDHTGroupServer *pDestServer)
 	}
 
 	/*
-	//printf("start DHT ip_addr: %s:%d, g_fdht_sync_thread_count=%d\n", 
+	//printf("start DHT ip_addr: %s:%u, g_fdht_sync_thread_count=%d\n", 
 			pDestServer->ip_addr, pDestServer->port, g_fdht_sync_thread_count);
 	*/
 

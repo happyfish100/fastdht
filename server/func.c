@@ -169,7 +169,7 @@ static int load_group_servers(GroupArray *pGroupArray, \
 				logError("file: "__FILE__", line: %d, " \
 					"group %d and group %d: " \
 					"servers not same, group %d " \
-					"no server \"%s:%d\"", __LINE__, \
+					"no server \"%s:%u\"", __LINE__, \
 					group_ids[0], group_ids[k], \
 					group_ids[0], (*ppServerInfo)->ip_addr,\
 					(*ppServerInfo)->port);
@@ -776,7 +776,7 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 		int i;
 		for (i=0; i<g_group_server_count; i++)
 		{
-			//printf("%d. %s:%d\n", i+1, g_group_servers[i].ip_addr, g_group_servers[i].port);
+			//printf("%d. %s:%u\n", i+1, g_group_servers[i].ip_addr, g_group_servers[i].port);
 		}
 		}
 		*/

@@ -34,8 +34,8 @@
 #include "global.h"
 #include "fdht_io.h"
 
-static void client_sock_read(int sock, short event, void *arg);
-static void client_sock_write(int sock, short event, void *arg);
+static void client_sock_read(int sock, const int event, void *arg);
+static void client_sock_write(int sock, const int event, void *arg);
 
 void task_finish_clean_up(struct fast_task_info *pTask)
 {
@@ -53,8 +53,13 @@ void task_finish_clean_up(struct fast_task_info *pTask)
 	free_queue_push(pTask);
 }
 
-void recv_notify_read(int sock, short event, void *arg)
+void recv_notify_read(int sock, const int event, void *arg)
 {
+#if IOEVENT_USE_URING
+    const bool use_iouring = true;
+#else
+    const bool use_iouring = false;
+#endif
 	int bytes;
 	int incomesock;
 	struct nio_thread_data *pThreadData;
@@ -120,10 +125,9 @@ void recv_notify_read(int sock, short event, void *arg)
 		}
 
 		strcpy(pTask->client_ip, szClientIp);
-
 		pThreadData = g_thread_data + incomesock % g_max_threads;
 		if (ioevent_set(pTask, pThreadData, incomesock, IOEVENT_READ,
-			client_sock_read, g_fdht_network_timeout) != 0)
+			client_sock_read, g_fdht_network_timeout, use_iouring) != 0)
 		{
 			task_finish_clean_up(pTask);
 			continue;
@@ -165,7 +169,7 @@ int send_add_event(struct fast_task_info *pTask)
 	return 0;
 }
 
-static void client_sock_read(int sock, short event, void *arg)
+static void client_sock_read(int sock, const int event, void *arg)
 {
 	int bytes;
 	int recv_bytes;
@@ -316,7 +320,7 @@ static void client_sock_read(int sock, short event, void *arg)
 	return;
 }
 
-static void client_sock_write(int sock, short event, void *arg)
+static void client_sock_write(int sock, const int event, void *arg)
 {
 	int bytes;
 	int result;

@@ -138,13 +138,13 @@ int main(int argc, char *argv[])
 	{
 		if ((result=fdht_stat(i, stat_buff, sizeof(stat_buff))) != 0)
 		{
-			printf("fdht_stat server %s:%d fail, errno: %d\n", 
+			printf("fdht_stat server %s:%u fail, errno: %d\n", 
 				g_group_array.servers[i].ip_addr, 
 				g_group_array.servers[i].port, result);
 		}
 		else
 		{
-			printf("server %s:%d\n", g_group_array.servers[i].ip_addr, \
+			printf("server %s:%u\n", g_group_array.servers[i].ip_addr, \
 				g_group_array.servers[i].port);
 			printf("%s\n", stat_buff);
 		}
