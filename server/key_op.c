@@ -7,9 +7,9 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <pthread.h>
-#include "logger.h"
-#include "shared_func.h"
-#include "sched_thread.h"
+#include "fastcommon/logger.h"
+#include "fastcommon/shared_func.h"
+#include "fastcommon/sched_thread.h"
 #include "key_op.h"
 #include "global.h"
 #include "func.h"
@@ -29,8 +29,8 @@ int key_init()
 	{
 		return 0;
 	}
-	
-	lock_count = g_max_threads;
+
+	lock_count = SF_G_WORK_THREADS;
 	if (lock_count % 2 == 0)
 	{
 		lock_count += 1;

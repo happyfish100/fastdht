@@ -14,8 +14,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "fastcommon/hash.h"
 #include "fdht_define.h"
-#include "hash.h"
 #include "store.h"
 
 #ifdef __cplusplus

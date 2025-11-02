@@ -5,10 +5,10 @@
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
-#include "logger.h"
+#include "fastcommon/logger.h"
+#include "fastcommon/shared_func.h"
+#include "fastcommon/sched_thread.h"
 #include "global.h"
-#include "shared_func.h"
-#include "sched_thread.h"
 #include "mpool_op.h"
 
 HashArray *g_hash_array = NULL;

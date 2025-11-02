@@ -21,35 +21,33 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include "fastcommon/shared_func.h"
+#include "fastcommon/pthread_func.h"
+#include "fastcommon/sched_thread.h"
+#include "fastcommon/logger.h"
+#include "fastcommon/ini_file_reader.h"
+#include "fastcommon/fast_task_queue.h"
+#include "fastcommon/ioevent_loop.h"
+#include "sf/sf_service.h"
+#include "sf/sf_nio.h"
 #include "fdht_define.h"
-#include "shared_func.h"
-#include "pthread_func.h"
-#include "sched_thread.h"
-#include "logger.h"
 #include "fdht_global.h"
 #include "fdht_types.h"
 #include "fdht_proto.h"
 #include "global.h"
-#include "ini_file_reader.h"
-#include "sockopt.h"
-#include "fast_task_queue.h"
-#include "fdht_io.h"
 #include "func.h"
 #include "store.h"
 #include "key_op.h"
 #include "sync.h"
 #include "mpool_op.h"
-#include "ioevent_loop.h"
 #include "work_thread.h"
 
 #define SYNC_REQ_WAIT_SECONDS	60
 
-static pthread_mutex_t work_thread_mutex;
 static pthread_mutex_t inc_thread_mutex;
 static time_t first_sync_req_time = 0;
 
-static void *work_thread_entrance(void* arg);
-static void wait_for_work_threads_exit();
+static int work_deal_task(struct fast_task_info *pTask, const int stage);
 
 static int deal_cmd_get(struct fast_task_info *pTask);
 static int deal_cmd_set(struct fast_task_info *pTask, byte op_type);
@@ -63,266 +61,65 @@ static int deal_cmd_batch_del(struct fast_task_info *pTask);
 static int deal_cmd_stat(struct fast_task_info *pTask);
 static int deal_cmd_get_sub_keys(struct fast_task_info *pTask);
 
+static int sock_accept_done_callback(struct fast_task_info *task,
+        const in_addr_64_t client_addr, const bool bInnerPort)
+{
+    if (g_allow_ip_count >= 0)
+    {
+        if (bsearch(&client_addr, g_allow_ip_addrs,
+                    g_allow_ip_count, sizeof(in_addr_64_t),
+                    cmp_by_ip_addr_t) == NULL)
+        {
+            logError("file: "__FILE__", line: %d, "
+                    "ip addr %s is not allowed to access",
+                    __LINE__, task->client_ip);
+            return EPERM;
+        }
+    }
+
+    return 0;
+}
+
+static int fdht_set_body_length(struct fast_task_info *pTask)
+{
+    pTask->recv.ptr->length = buff2int(((FDHTProtoHeader *)
+                pTask->recv.ptr->data)->pkg_len);
+    if (pTask->recv.ptr->length < 0)
+    {
+        logError("file: "__FILE__", line: %d, "
+                "client ip: %s, pkg length: %d < 0", __LINE__,
+                pTask->client_ip, pTask->recv.ptr->length);
+        return EINVAL;
+    }
+
+    return 0;
+}
+
 int work_thread_init()
 {
-#define ALLOC_CONNECTIONS_ONCE 256
-    const char *service_name = "service";
-	int result;
-	int bytes;
-	struct nio_thread_data *pThreadData;
-	struct nio_thread_data *pDataEnd;
-	pthread_t tid;
-	pthread_attr_t thread_attr;
+    int result;
 
-	if ((result=init_pthread_lock(&work_thread_mutex)) != 0)
-	{
-		logError("file: "__FILE__", line: %d, " \
-			"init_pthread_lock fail, program exit!", __LINE__);
-		return result;
-	}
+    if ((result=init_pthread_lock(&inc_thread_mutex)) != 0) {
+        logError("file: "__FILE__", line: %d, "
+                "init_pthread_lock fail, program exit!", __LINE__);
+        return result;
+    }
 
-	if ((result=init_pthread_lock(&inc_thread_mutex)) != 0)
-	{
-		logError("file: "__FILE__", line: %d, " \
-			"init_pthread_lock fail, program exit!", __LINE__);
-		return result;
-	}
+    result = sf_service_init("service", NULL, NULL,
+            sock_accept_done_callback, fdht_set_body_length, NULL,
+            work_deal_task, sf_task_finish_clean_up, NULL, 1000,
+            sizeof(FDHTProtoHeader), 0);
+    sf_enable_thread_notify(false);
 
-	if ((result=init_pthread_attr(&thread_attr, g_thread_stack_size)) != 0)
-	{
-		logError("file: "__FILE__", line: %d, " \
-			"init_pthread_attr fail, program exit!", __LINE__);
-		return result;
-	}
-
-	if ((result=free_queue_init(&g_free_queue, g_max_connections,
-                    ALLOC_CONNECTIONS_ONCE, g_min_buff_size,
-                    g_max_pkg_size)) != 0)
-	{
-		return result;
-	}
-
-	bytes = sizeof(struct nio_thread_data) * g_max_threads;
-	g_thread_data = (struct nio_thread_data *)malloc(bytes);
-	if (g_thread_data == NULL)
-	{
-		logError("file: "__FILE__", line: %d, " \
-			"malloc %d bytes fail, errno: %d, error info: %s", \
-			__LINE__, bytes, errno, STRERROR(errno));
-		return errno != 0 ? errno : ENOMEM;
-	}
-	memset(g_thread_data, 0, bytes);
-
-	g_thread_count = 0;
-	pDataEnd = g_thread_data + g_max_threads;
-	for (pThreadData=g_thread_data; pThreadData<pDataEnd; pThreadData++)
-	{
-		if (ioevent_init(&pThreadData->ev_puller, service_name,
-                    g_max_connections + 2, 1000, 0) != 0)
-		{
-			result  = errno != 0 ? errno : ENOMEM;
-			logError("file: "__FILE__", line: %d, " \
-				"ioevent_init fail, " \
-				"errno: %d, error info: %s", \
-				__LINE__, result, STRERROR(result));
-			return result;
-		}
-
-		result = fast_timer_init(&pThreadData->timer,
-				2 * g_fdht_network_timeout, g_current_time);
-		if (result != 0)
-		{
-			logError("file: "__FILE__", line: %d, " \
-				"fast_timer_init fail, " \
-				"errno: %d, error info: %s", \
-				__LINE__, result, STRERROR(result));
-			return result;
-		}
-
-		if (pipe(pThreadData->pipe_fds) != 0)
-		{
-			result = errno != 0 ? errno : EPERM;
-			logError("file: "__FILE__", line: %d, " \
-				"call pipe fail, " \
-				"errno: %d, error info: %s", \
-				__LINE__, result, STRERROR(result));
-			break;
-		}
-
-#if defined(OS_LINUX)
-		if ((result=fd_add_flags(pThreadData->pipe_fds[0], \
-				O_NONBLOCK | O_NOATIME)) != 0)
-		{
-			break;
-		}
-#else
-		if ((result=fd_add_flags(pThreadData->pipe_fds[0], \
-				O_NONBLOCK)) != 0)
-		{
-			break;
-		}
-#endif
-
-		if ((result=pthread_create(&tid, &thread_attr, \
-			work_thread_entrance, pThreadData)) != 0)
-		{
-			logError("file: "__FILE__", line: %d, " \
-				"create thread failed, startup threads: %d, " \
-				"errno: %d, error info: %s", \
-				__LINE__, g_thread_count, \
-				result, STRERROR(result));
-			break;
-		}
-		else
-		{
-			if ((result=pthread_mutex_lock(&work_thread_mutex)) != 0)
-			{
-				logError("file: "__FILE__", line: %d, " \
-					"call pthread_mutex_lock fail, " \
-					"errno: %d, error info: %s", \
-					__LINE__, result, STRERROR(result));
-			}
-			g_thread_count++;
-			if ((result=pthread_mutex_unlock(&work_thread_mutex)) != 0)
-			{
-				logError("file: "__FILE__", line: %d, " \
-					"call pthread_mutex_lock fail, " \
-					"errno: %d, error info: %s", \
-					__LINE__, result, STRERROR(result));
-			}
-		}
-	}
-
-	pthread_attr_destroy(&thread_attr);
-
-	return result;
-}
-
-static void *accept_thread_entrance(void* arg)
-{
-	int server_sock;
-	int incomesock;
-	struct sockaddr_in inaddr;
-	unsigned int sockaddr_len;
-	struct nio_thread_data *pThreadData;
-
-	server_sock = (long)arg;
-	while (g_continue_flag)
-	{
-		sockaddr_len = sizeof(inaddr);
-		incomesock = accept(server_sock, (struct sockaddr*)&inaddr, \
-				&sockaddr_len);
-		if (incomesock < 0) //error
-		{
-			if (!(errno == EINTR || errno == EAGAIN))
-			{
-				logError("file: "__FILE__", line: %d, " \
-					"accept failed, " \
-					"errno: %d, error info: %s", \
-					__LINE__, errno, STRERROR(errno));
-			}
-
-			continue;
-		}
-
-		pThreadData = g_thread_data + incomesock % g_max_threads;
-		if (write(pThreadData->pipe_fds[1], &incomesock, \
-			sizeof(incomesock)) != sizeof(incomesock))
-		{
-			close(incomesock);
-			logError("file: "__FILE__", line: %d, " \
-				"call write failed, " \
-				"errno: %d, error info: %s", \
-				__LINE__, errno, STRERROR(errno));
-		}
-	}
-
-	return NULL;
-}
-
-void fdht_accept_loop(int server_sock)
-{
-	if (g_accept_threads > 1)
-	{
-		pthread_t tid;
-		pthread_attr_t thread_attr;
-		int result;
-		int i;
-
-		if ((result=init_pthread_attr(&thread_attr, g_thread_stack_size)) != 0)
-		{
-			logWarning("file: "__FILE__", line: %d, " \
-				"init_pthread_attr fail!", __LINE__);
-		}
-		else
-		{
-			for (i=1; i<g_accept_threads; i++)
-			{
-			if ((result=pthread_create(&tid, &thread_attr, \
-				accept_thread_entrance, \
-				(void *)(long)server_sock)) != 0)
-			{
-				logError("file: "__FILE__", line: %d, " \
-				"create thread failed, startup threads: %d, " \
-				"errno: %d, error info: %s", \
-				__LINE__, i, result, STRERROR(result));
-				break;
-			}
-			}
-
-			pthread_attr_destroy(&thread_attr);
-		}
-	}
-
-	accept_thread_entrance((void *)(long)server_sock);
-}
-
-static void *work_thread_entrance(void* arg)
-{
-	int result;
-	struct nio_thread_data *pThreadData;
-
-	pThreadData = (struct nio_thread_data *)arg;
-	ioevent_loop(pThreadData, recv_notify_read, task_finish_clean_up,
-		&g_continue_flag);
-	ioevent_destroy(&pThreadData->ev_puller);
-
-	if ((result=pthread_mutex_lock(&work_thread_mutex)) != 0)
-	{
-		logError("file: "__FILE__", line: %d, " \
-			"call pthread_mutex_lock fail, " \
-			"errno: %d, error info: %s", \
-			__LINE__, result, STRERROR(result));
-	}
-	g_thread_count--;
-	if ((result=pthread_mutex_unlock(&work_thread_mutex)) != 0)
-	{
-		logError("file: "__FILE__", line: %d, " \
-			"call pthread_mutex_lock fail, " \
-			"errno: %d, error info: %s", \
-			__LINE__, result, STRERROR(result));
-	}
-
-	return NULL;
+    return 0;
 }
 
 void work_thread_destroy()
 {
-	wait_for_work_threads_exit();
-
-	pthread_mutex_destroy(&work_thread_mutex);
 	pthread_mutex_destroy(&inc_thread_mutex);
 }
 
-static void wait_for_work_threads_exit()
-{
-	while (g_thread_count != 0)
-	{
-		sleep(1);
-	}
-}
-
-int work_deal_task(struct fast_task_info *pTask)
+static int work_deal_task(struct fast_task_info *pTask, const int stage)
 {
 	FDHTProtoHeader *pHeader;
 	int result;
@@ -356,7 +153,7 @@ int work_deal_task(struct fast_task_info *pTask)
 			result = 0;
 			break;
 		case FDHT_PROTO_CMD_QUIT:
-			task_finish_clean_up(pTask);
+			sf_task_finish_clean_up(pTask);
 			return 0;
 		case FDHT_PROTO_CMD_BATCH_GET:
 			result = deal_cmd_batch_get(pTask);
@@ -396,8 +193,7 @@ int work_deal_task(struct fast_task_info *pTask)
 	pHeader->cmd = FDHT_PROTO_CMD_RESP;
 	int2buff(pTask->send.ptr->length - sizeof(FDHTProtoHeader), pHeader->pkg_len);
 
-	send_add_event(pTask);
-
+	sf_send_add_event(pTask);
 	return 0;
 }
 
@@ -1831,7 +1627,7 @@ static int deal_cmd_inc(struct fast_task_info *pTask)
 
 	FDHT_PACK_FULL_KEY(key_info, full_key, full_key_len, p)
 
-	if (g_max_threads > 1 && (lock_res=pthread_mutex_lock( \
+	if (SF_G_WORK_THREADS > 1 && (lock_res=pthread_mutex_lock( \
 			&inc_thread_mutex)) != 0)
 	{
 		logError("file: "__FILE__", line: %d, " \
@@ -1844,7 +1640,7 @@ static int deal_cmd_inc(struct fast_task_info *pTask)
 	result = g_func_inc_ex(g_db_list[group_id], full_key, full_key_len, inc, \
 			value, &value_len, new_expires);
 
-	if (g_max_threads > 1 && (lock_res=pthread_mutex_unlock( \
+	if (SF_G_WORK_THREADS > 1 && (lock_res=pthread_mutex_unlock(
 			&inc_thread_mutex)) != 0)
 	{
 		logError("file: "__FILE__", line: %d, " \
@@ -1909,13 +1705,12 @@ static int deal_cmd_stat(struct fast_task_info *pTask)
 	current_time = g_current_time;
 
 	p += sprintf(p, "server=%s:%u\n", g_local_host_ip_addrs+IP_ADDRESS_SIZE
-			 , g_server_port);
+			 , SF_G_OUTER_PORT);
 	p += sprintf(p, "version=%d.%02d\n", g_fdht_version.major, g_fdht_version.minor);
 	p += sprintf(p, "uptime=%d\n", (int)(current_time-g_server_start_time));
 	p += sprintf(p, "curr_time=%d\n", (int)current_time);
-	p += sprintf(p, "max_connections=%d\n", g_max_connections);
-	p += sprintf(p, "curr_connections=%d\n", \
-			g_max_connections - free_queue_count(&g_free_queue));
+	p += sprintf(p, "max_connections=%d\n", SF_G_MAX_CONNECTIONS);
+	p += sprintf(p, "curr_connections=%d\n", SF_G_CONN_CURRENT_COUNT);
 	p += sprintf(p, "total_set_count=%"PRId64"\n", \
 			g_server_stat.total_set_count);
 	p += sprintf(p, "success_set_count=%"PRId64"\n", \

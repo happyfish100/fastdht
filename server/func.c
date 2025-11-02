@@ -12,16 +12,18 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
-#include "logger.h"
-#include "sockopt.h"
-#include "shared_func.h"
-#include "pthread_func.h"
-#include "sched_thread.h"
-#include "ini_file_reader.h"
+#include "fastcommon/logger.h"
+#include "fastcommon/sockopt.h"
+#include "fastcommon/shared_func.h"
+#include "fastcommon/pthread_func.h"
+#include "fastcommon/sched_thread.h"
+#include "fastcommon/ini_file_reader.h"
+#include "fastcommon/fast_task_queue.h"
+#include "sf/sf_service.h"
+#include "sf/sf_util.h"
 #include "fdht_global.h"
 #include "global.h"
 #include "fdht_func.h"
-#include "fast_task_queue.h"
 #include "sync.h"
 #include "func.h"
 #include "store.h"
@@ -356,25 +358,22 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 		DBType *db_type, int64_t *nCacheSize, int *page_size, \
 		char *db_file_prefix)
 {
-	char *pBasePath;
-	char *pBindAddr;
+    const int fixed_buffer_size = 0;
+    const int task_buffer_extra_size = 0;
+    const bool need_set_run_by = false;
+    char *pBindAddr;
 	char *pDbType;
 	char *pDbFilePrefix;
 	char *pRunByGroup;
 	char *pRunByUser;
 	char *pCacheSize;
 	char *pPageSize;
-	char *pMaxPkgSize;
-	char *pMinBuffSize;
 	char *pStoreType;
-	char *pThreadStackSize;
 	char *pIfAliasPrefix;
 	IniContext iniContext;
+    SFContextIniConfig config;
 	int result;
 	int64_t nPageSize;
-	int64_t max_pkg_size;
-	int64_t min_buff_size;
-	int64_t thread_stack_size;
 	GroupArray groupArray;
 	char sz_sync_db_time_base[16];
 	char sz_clear_expired_time_base[16];
@@ -401,35 +400,17 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 			break;
 		}
 
-		pBasePath = iniGetStrValue(NULL, "base_path", &iniContext);
-		if (pBasePath == NULL)
-		{
-			logError("file: "__FILE__", line: %d, " \
-				"conf file \"%s\" must have item " \
-				"\"base_path\"!", \
-				__LINE__, filename);
-			result = ENOENT;
-			break;
-		}
+        sf_set_current_time();
 
-		snprintf(g_fdht_base_path, sizeof(g_fdht_base_path), "%s", pBasePath);
-		chopPath(g_fdht_base_path);
-		if (!fileExists(g_fdht_base_path))
-		{
-			logError("file: "__FILE__", line: %d, " \
-				"\"%s\" can't be accessed, error info: %s", \
-				__LINE__, STRERROR(errno), g_fdht_base_path);
-			result = errno != 0 ? errno : ENOENT;
-			break;
-		}
-		if (!isDir(g_fdht_base_path))
-		{
-			logError("file: "__FILE__", line: %d, " \
-				"\"%s\" is not a directory!", \
-				__LINE__, g_fdht_base_path);
-			result = ENOTDIR;
-			break;
-		}
+        SF_SET_CONTEXT_INI_CONFIG_EX(config, fc_comm_type_sock, filename,
+                &iniContext, NULL, FDHT_SERVER_DEFAULT_PORT,
+                FDHT_SERVER_DEFAULT_PORT, DEFAULT_WORK_THREADS,
+                "buff_size", 0);
+        if ((result=sf_load_config_ex("fdhtd", &config, fixed_buffer_size,
+                        task_buffer_extra_size, need_set_run_by)) != 0)
+        {
+            return result;
+        }
 
 		load_log_level(&iniContext);
 		if ((result=log_set_prefix(g_fdht_base_path, "fdhtd")) != 0)
@@ -458,13 +439,6 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 			g_heart_beat_interval = 1;
 		}
 
-		g_server_port = iniGetIntValue(NULL, "port", &iniContext, \
-					FDHT_SERVER_DEFAULT_PORT);
-		if (g_server_port <= 0)
-		{
-			g_server_port = FDHT_SERVER_DEFAULT_PORT;
-		}
-
 		pBindAddr = iniGetStrValue(NULL, "bind_addr", &iniContext);
 		if (pBindAddr == NULL)
 		{
@@ -473,17 +447,6 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 		else
 		{
 			snprintf(bind_addr, addr_size, "%s", pBindAddr);
-		}
-
-		g_max_connections = iniGetIntValue(NULL, "max_connections", \
-				&iniContext, DEFAULT_MAX_CONNECTONS);
-		if (g_max_connections <= 0)
-		{
-			g_max_connections = DEFAULT_MAX_CONNECTONS;
-		}
-		if ((result=set_rlimit(RLIMIT_NOFILE, g_max_connections)) != 0)
-		{
-			break;
 		}
 
 		pStoreType = iniGetStrValue(NULL, "store_type", &iniContext);
@@ -641,62 +604,6 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 				g_db_dead_lock_detect_interval);
 		}
 
-		g_max_threads = iniGetIntValue(NULL, "max_threads", &iniContext, \
-					FDHT_DEFAULT_MAX_THREADS);
-		if (g_max_threads <= 0)
-		{
-			logError("file: "__FILE__", line: %d, " \
-				"item \"max_threads\" is invalid, " \
-				"value: %d <= 0!", __LINE__, g_max_threads);
-			result = EINVAL;
-			break;
-		}
-
-		g_accept_threads = iniGetIntValue(NULL, "accept_threads",
-					&iniContext, 1);
-		if (g_accept_threads <= 0)
-		{
-			logError("file: "__FILE__", line: %d, " \
-				"item \"accept_threads\" is invalid, " \
-				"value: %d <= 0!", __LINE__, g_accept_threads);
-			result = EINVAL;
-			break;
-		}
-
-		pMaxPkgSize = iniGetStrValue(NULL, "max_pkg_size", &iniContext);
-		if (pMaxPkgSize == NULL)
-		{
-			g_max_pkg_size = FDHT_MAX_PKG_SIZE;
-		}
-		else 
-		{
-			if ((result=parse_bytes(pMaxPkgSize, 1, \
-					&max_pkg_size)) != 0)
-			{
-				return result;
-			}
-			g_max_pkg_size = (int)max_pkg_size;
-		}
-
-		pMinBuffSize = iniGetStrValue(NULL, "min_buff_size", &iniContext);
-		if (pMinBuffSize == NULL)
-		{
-			g_min_buff_size = FDHT_MIN_BUFF_SIZE;
-		}
-		else
-		{
-			if ((result=parse_bytes(pMinBuffSize, 1, \
-					&min_buff_size)) != 0)
-			{
-				return result;
-			}
-			g_min_buff_size = (int)min_buff_size;
-			if (g_min_buff_size < 1024)
-			{
-				g_min_buff_size = 1024;
-			}
-		}
-
 		g_sync_wait_usec = iniGetIntValue(NULL, "sync_wait_msec", \
 			 &iniContext, DEFAULT_SYNC_WAIT_MSEC);
 		if (g_sync_wait_usec <= 0)
@@ -781,16 +688,6 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 		}
 		*/
 
-		g_sync_log_buff_interval = iniGetIntValue(NULL,  \
-				"sync_log_buff_interval", &iniContext, \
-				SYNC_LOG_BUFF_DEF_INTERVAL);
-		if (g_sync_log_buff_interval <= 0)
-		{
-			g_sync_log_buff_interval = SYNC_LOG_BUFF_DEF_INTERVAL;
-		}
-
-
-
 		g_need_clear_expired_data = iniGetBoolValue(NULL,  \
 				"need_clear_expired_data", &iniContext, true);
 		g_clear_expired_interval = iniGetIntValue(NULL,  \
@@ -864,65 +761,39 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 			g_write_mark_file_freq = FDHT_DEFAULT_SYNC_MARK_FILE_FREQ;
 		}
 
-		pThreadStackSize = iniGetStrValue(NULL,  \
-			"thread_stack_size", &iniContext);
-		if (pThreadStackSize == NULL)
-		{
-			thread_stack_size = 1 * 1024 * 1024;
-		}
-		else if ((result=parse_bytes(pThreadStackSize, 1, \
-				&thread_stack_size)) != 0)
-		{
-			return result;
-		}
-		g_thread_stack_size = (int)thread_stack_size;
-
 		g_store_sub_keys = iniGetBoolValue(NULL, "store_sub_keys", \
 						&iniContext, false);
 
-		logInfo("FastDHT v%d.%02d, base_path=%s, " \
-			"total group count=%d, my group count=%d, " \
-			"group server count=%d, " \
-			"connect_timeout=%d, "\
-			"network_timeout=%d, "\
-			"port=%d, bind_addr=%s, " \
-			"max_connections=%d, "    \
-			"accept_threads=%d, "    \
-			"max_threads=%d, "    \
-			"max_pkg_size=%d KB, " \
-			"min_buff_size=%d KB, " \
-			"store_type=%s, " \
-			"cache_size=%d MB, %s, " \
-			"sync_wait_msec=%dms, "  \
-			"allow_ip_count=%d, sync_log_buff_interval=%ds, " \
-			"need_clear_expired_data=%d, " \
-			"clear_expired_time_base=%s, " \
-			"clear_expired_interval=%ds, " \
-			"write_to_binlog=%d, sync_binlog_buff_interval=%ds, " \
-			"compress_binlog_time_base=%s, " \
-			"compress_binlog_interval=%ds, " \
-			"sync_stat_file_interval=%ds, " \
-			"write_mark_file_freq=%d, " \
-			"thread_stack_size=%d KB, if_alias_prefix=%s, " \
-			"store_sub_keys=%d",  \
-			g_fdht_version.major, g_fdht_version.minor, \
-			g_fdht_base_path, g_group_count, *group_count, \
-			g_group_server_count, g_fdht_connect_timeout, \
-			g_fdht_network_timeout, \
-			g_server_port, bind_addr, g_max_connections, \
-			g_accept_threads, g_max_threads, g_max_pkg_size / 1024, \
-			g_min_buff_size / 1024, \
-			g_store_type == FDHT_STORE_TYPE_BDB ? "BDB" : "MPOOL", \
-			(int)(*nCacheSize / (1024 * 1024)), szStoreParams, \
-			g_sync_wait_usec / 1000, \
-			g_allow_ip_count, g_sync_log_buff_interval, \
-			g_need_clear_expired_data, \
-			sz_clear_expired_time_base, g_clear_expired_interval, \
-			g_write_to_binlog_flag, \
-			g_sync_binlog_buff_interval, \
-			sz_compress_binlog_time_base, \
-			g_compress_binlog_interval, g_sync_stat_file_interval, \
- 			g_write_mark_file_freq, g_thread_stack_size/1024, \
+		logInfo("FastDHT v%d.%02d, " \
+			"total group count=%d, my group count=%d, "
+			"group server count=%d, "
+			"store_type=%s, "
+			"cache_size=%d MB, %s, "
+			"sync_wait_msec=%dms, "
+			"allow_ip_count=%d, "
+			"need_clear_expired_data=%d, "
+			"clear_expired_time_base=%s, "
+			"clear_expired_interval=%ds, "
+			"write_to_binlog=%d, sync_binlog_buff_interval=%ds, "
+			"compress_binlog_time_base=%s, "
+			"compress_binlog_interval=%ds, "
+			"sync_stat_file_interval=%ds, "
+			"write_mark_file_freq=%d, "
+            "if_alias_prefix=%s, "
+			"store_sub_keys=%d",
+			g_fdht_version.major, g_fdht_version.minor,
+            g_group_count, *group_count,
+			g_group_server_count,
+			g_store_type == FDHT_STORE_TYPE_BDB ? "BDB" : "MPOOL",
+			(int)(*nCacheSize / (1024 * 1024)), szStoreParams,
+			g_sync_wait_usec / 1000,
+			g_allow_ip_count, g_need_clear_expired_data,
+			sz_clear_expired_time_base, g_clear_expired_interval,
+			g_write_to_binlog_flag,
+			g_sync_binlog_buff_interval,
+			sz_compress_binlog_time_base,
+			g_compress_binlog_interval, g_sync_stat_file_interval,
+ 			g_write_mark_file_freq,
 			g_if_alias_prefix, g_store_sub_keys);
 	} while (0);
 
@@ -1031,7 +902,7 @@ int start_dl_detect_thread()
 		return 0;
 	}
 	
-	if ((result=init_pthread_attr(&thread_attr, g_thread_stack_size)) != 0)
+	if ((result=init_pthread_attr(&thread_attr, SF_G_THREAD_STACK_SIZE)) != 0)
 	{
 		return result;
 	}
@@ -1256,30 +1127,10 @@ int fdht_write_to_stat_file()
 
 int fdht_terminate()
 {
-	struct nio_thread_data *pThreadData;
-	struct nio_thread_data *pDataEnd;
-	int quit_sock;
-
-	g_continue_flag = false;
-
+	SF_G_CONTINUE_FLAG = false;
 	if (g_store_type == FDHT_STORE_TYPE_BDB)
 	{
 		pthread_kill(dld_tid, SIGINT);
-	}
-
-	if (g_thread_data != NULL)
-	{
-		pDataEnd = g_thread_data + g_max_threads;
-		quit_sock = 0;
-		for (pThreadData=g_thread_data; pThreadData<pDataEnd; \
-			pThreadData++)
-		{
-			quit_sock--;
-			if (write(pThreadData->pipe_fds[1], &quit_sock, \
-					sizeof(quit_sock)) != sizeof(quit_sock))
-			{
-			}
-		}
 	}
 
 	return 0;

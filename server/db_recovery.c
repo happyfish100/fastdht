@@ -12,14 +12,11 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
-#include "logger.h"
-#include "sockopt.h"
-#include "shared_func.h"
-#include "ini_file_reader.h"
+#include "fastcommon/logger.h"
+#include "fastcommon/shared_func.h"
 #include "fdht_global.h"
 #include "global.h"
 #include "fdht_func.h"
-#include "fast_task_queue.h"
 #include "sync.h"
 #include "func.h"
 #include "db_recovery.h"
@@ -320,7 +317,7 @@ static int fdht_recover_data(const int start_binlog_index, \
 		}
 	}
 
-	reader.port = g_server_port;
+	reader.port = SF_G_OUTER_PORT;
 	reader.binlog_index = start_binlog_index;
 	reader.binlog_offset = start_binlog_offset;
 	reader.binlog_fd = -1;
@@ -343,7 +340,7 @@ static int fdht_recover_data(const int start_binlog_index, \
 		return errno != 0 ? errno : ENOMEM;
 	}
 
-	while (g_continue_flag)
+	while (SF_G_CONTINUE_FLAG)
 	{
 		result = fdht_binlog_read(&reader, \
 				&record, &record_len);

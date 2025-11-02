@@ -21,14 +21,14 @@
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
+#include "fastcommon/logger.h"
+#include "fastcommon/shared_func.h"
+#include "fastcommon/pthread_func.h"
+#include "fastcommon/sched_thread.h"
+#include "fastcommon/ini_file_reader.h"
+#include "fastcommon/sockopt.h"
+#include "sf/sf_global.h"
 #include "fdht_define.h"
-#include "logger.h"
-#include "sockopt.h"
-#include "shared_func.h"
-#include "pthread_func.h"
-#include "sched_thread.h"
-#include "ini_file_reader.h"
-#include "hash.h"
 #include "global.h"
 #include "func.h"
 #include "sync.h"
@@ -92,7 +92,7 @@ static int fdht_report_sync_done(FDHTServerInfo *pDestServer)
 	pHeader = (FDHTProtoHeader *)out_buff;
 	pHeader->cmd = FDHT_PROTO_CMD_SYNC_NOTIFY;
 	int2buff(4, pHeader->pkg_len);
-	int2buff(g_server_port, out_buff + sizeof(FDHTProtoHeader));
+	int2buff(SF_G_OUTER_PORT, out_buff + sizeof(FDHTProtoHeader));
 
 	if ((result=tcpsenddata(pDestServer->sock, out_buff, \
 		sizeof(FDHTProtoHeader) + 4, g_fdht_network_timeout)) != 0)
@@ -150,7 +150,7 @@ static int fdht_sync_req(FDHTServerInfo *pDestServer, BinLogReader *pReader)
 	pHeader->cmd = FDHT_PROTO_CMD_SYNC_REQ;
 	int2buff(13, pHeader->pkg_len);
 
-	int2buff(g_server_port, out_buff + sizeof(FDHTProtoHeader));
+	int2buff(SF_G_OUTER_PORT, out_buff + sizeof(FDHTProtoHeader));
 	*(out_buff + sizeof(FDHTProtoHeader) + 4) = g_sync_old_done;
 	long2buff(g_server_stat.success_set_count+g_server_stat.success_inc_count
 		+ g_server_stat.success_delete_count,
@@ -199,8 +199,8 @@ static int fdht_sync_req(FDHTServerInfo *pDestServer, BinLogReader *pReader)
 	sync_src_port = buff2int(in_buff+1+IP_ADDRESS_SIZE);
 	pReader->until_timestamp = buff2int(in_buff+1+IP_ADDRESS_SIZE+4);
 
-	if (is_local_host_ip(sync_src_ip_addr) && \
-		sync_src_port == g_server_port)
+	if (is_local_host_ip(sync_src_ip_addr) &&
+		sync_src_port == SF_G_OUTER_PORT)
 	{
 		pReader->need_sync_old = true;
 	}
@@ -787,7 +787,7 @@ static int fdht_reader_sync_init(FDHTServerInfo *pDestServer, BinLogReader *pRea
 	int result;
 
 	result = 0;
-	while (g_continue_flag)
+	while (SF_G_CONTINUE_FLAG)
 	{
 		result = fdht_sync_req(pDestServer, pReader);
 		if (result == 0)
@@ -803,7 +803,7 @@ static int fdht_reader_sync_init(FDHTServerInfo *pDestServer, BinLogReader *pRea
 		sleep(g_heart_beat_interval);
 	}
 
-	if (!g_continue_flag)
+	if (!SF_G_CONTINUE_FLAG)
 	{
 		return result != 0 ? result : ENOENT;
 	}
@@ -1660,12 +1660,12 @@ static void* fdht_sync_thread_entrance(void* arg)
 	strcpy(fdht_server.ip_addr, pDestServer->ip_addr);
 	fdht_server.port = pDestServer->port;
 	fdht_server.sock = -1;
-	while (g_continue_flag)
+	while (SF_G_CONTINUE_FLAG)
 	{
 		previousCode = 0;
 		nContinuousFail = 0;
 		conn_result = 0;
-		while (g_continue_flag)
+		while (SF_G_CONTINUE_FLAG)
 		{
 			fdht_server.sock = \
 				socket(AF_INET, SOCK_STREAM, 0);
@@ -1738,7 +1738,7 @@ static void* fdht_sync_thread_entrance(void* arg)
 				conn_result, STRERROR(conn_result));
 		}
 
-		if (!g_continue_flag)
+		if (!SF_G_CONTINUE_FLAG)
 		{
 			break;
 		}
@@ -1767,7 +1767,7 @@ static void* fdht_sync_thread_entrance(void* arg)
 
 		if (fdht_reader_init(&fdht_server, &reader) != 0)
 		{
-			if (!g_continue_flag)
+			if (!SF_G_CONTINUE_FLAG)
 			{
 				break;
 			}
@@ -1780,7 +1780,7 @@ static void* fdht_sync_thread_entrance(void* arg)
 
 		last_active_time = g_current_time;
 		sync_result = 0;
-		while (g_continue_flag)
+		while (SF_G_CONTINUE_FLAG)
 		{
 			read_result = fdht_binlog_read(&reader, \
 					&record, &record_len);
@@ -1888,7 +1888,7 @@ static void* fdht_sync_thread_entrance(void* arg)
 		fdht_server.sock = -1;
 		fdht_reader_destroy(&reader);
 
-		if (!g_continue_flag)
+		if (!SF_G_CONTINUE_FLAG)
 		{
 			break;
 		}
@@ -1935,7 +1935,7 @@ static int fdht_sync_thread_start(const FDHTGroupServer *pDestServer)
 		return 0;
 	}
 
-	if ((result=init_pthread_attr(&pattr, g_thread_stack_size)) != 0)
+	if ((result=init_pthread_attr(&pattr, SF_G_THREAD_STACK_SIZE)) != 0)
 	{
 		return result;
 	}

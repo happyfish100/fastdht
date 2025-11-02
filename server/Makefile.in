@@ -1,15 +1,15 @@
 .SUFFIXES: .c .o
 
 COMPILE = $(CC) $(CFLAGS)
-INC_PATH = -I../common -I/usr/include/fastcommon -I/usr/local/include
-LIB_PATH = -L/usr/local/lib -ldb -lfastcommon $(LIBS)
+INC_PATH = -I../common -I/usr/include -I/usr/local/include
+LIB_PATH = -L/usr/local/lib -ldb -lfastcommon -lserverframe $(LIBS)
 TARGET_PATH = $(TARGET_PREFIX)/bin
 CONFIG_PATH = $(TARGET_CONF_PATH)
 
 COMMON_LIB =
 SHARED_OBJS = ../common/fdht_global.o \
               ../common/fdht_func.o ../common/fdht_proto.o \
-              global.o fdht_io.o db_op.o func.o work_thread.o sync.o \
+              global.o db_op.o func.o work_thread.o sync.o \
               db_recovery.o store.o mpool_op.o key_op.o
 
 ALL_OBJS = $(SHARED_OBJS)

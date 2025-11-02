@@ -14,20 +14,10 @@
 #include "fastcommon/shared_func.h"
 #include "global.h"
 
-volatile bool g_continue_flag = true;
-
-int g_server_port = FDHT_SERVER_DEFAULT_PORT;
-int g_max_connections = DEFAULT_MAX_CONNECTONS;
-int g_max_threads = 4;
-int g_accept_threads = 1;
-int g_max_pkg_size = FDHT_MAX_PKG_SIZE;
-int g_min_buff_size = FDHT_MIN_BUFF_SIZE;
 int g_heart_beat_interval = DEFAULT_NETWORK_TIMEOUT / 2;
 bool g_write_to_binlog_flag = true;
 
-int g_thread_count = 0;
 int g_sync_wait_usec = DEFAULT_SYNC_WAIT_MSEC;
-int g_sync_log_buff_interval = SYNC_LOG_BUFF_DEF_INTERVAL;
 int g_sync_binlog_buff_interval = SYNC_BINLOG_BUFF_DEF_INTERVAL;
 TimeInfo g_sync_db_time_base = {TIME_NONE, TIME_NONE};
 int g_sync_db_interval = DEFAULT_SYNC_DB_INVERVAL;
@@ -64,8 +54,3 @@ int g_mpool_init_capacity = FDHT_DEFAULT_MPOOL_INIT_CAPACITY;
 double g_mpool_load_factor = FDHT_DEFAULT_MPOOL_LOAD_FACTOR;
 int g_mpool_clear_min_interval = FDHT_DEFAULT_MPOOL_CLEAR_MIN_INTEVAL;
 int g_mpool_htable_lock_count = FDHT_DEFAULT_MPOOL_HTABLE_LOCK_COUNT;
-
-struct nio_thread_data *g_thread_data = NULL;
-int g_thread_stack_size = 1 * 1024 * 1024;
-struct fast_task_queue g_free_queue;
-

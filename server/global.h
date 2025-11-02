@@ -20,6 +20,7 @@
 #include "fastcommon/ioevent.h"
 #include "fastcommon/fast_timer.h"
 #include "fastcommon/fast_task_queue.h"
+#include "sf/sf_global.h"
 #include "fdht_define.h"
 #include "fdht_global.h"
 #include "fdht_types.h"
@@ -30,20 +31,10 @@ extern "C" {
 
 #define FDHT_IF_ALIAS_PREFIX_MAX_SIZE 32
 
-extern volatile bool g_continue_flag;
-
-extern int g_server_port;
-extern int g_max_connections;
-extern int g_max_threads;
-extern int g_accept_threads;
-extern int g_max_pkg_size;
-extern int g_min_buff_size;
 extern int g_heart_beat_interval;
 extern bool g_write_to_binlog_flag;
 
-extern int g_thread_count;
 extern int g_sync_wait_usec;
-extern int g_sync_log_buff_interval;
 extern int g_sync_binlog_buff_interval;
 extern TimeInfo g_sync_db_time_base;
 extern int g_sync_db_interval;
@@ -80,10 +71,6 @@ extern int g_mpool_init_capacity;
 extern double g_mpool_load_factor;
 extern int g_mpool_clear_min_interval;
 extern int g_mpool_htable_lock_count;
-extern struct nio_thread_data *g_thread_data;
-
-extern int g_thread_stack_size;
-extern struct fast_task_queue g_free_queue;
 
 #ifdef __cplusplus
 }

@@ -536,7 +536,7 @@ void *bdb_dl_detect_entrance(void *arg)
 	nSec = g_db_dead_lock_detect_interval / 1000;
 	nUsec = (g_db_dead_lock_detect_interval % 1000) * 1000;
 
-	while (g_continue_flag)
+	while (SF_G_CONTINUE_FLAG)
 	{
 		g_db_env->lock_detect(g_db_env, 0, DB_LOCK_YOUNGEST, NULL);
 
@@ -602,8 +602,8 @@ int db_clear_expired_keys(void *arg)
 	success_count = 0;
 	current_time = tv_start.tv_sec;
 
-	while (g_continue_flag && (result=cursor->get(cursor, &key, &value, \
-		DB_NEXT)) == 0)
+	while (SF_G_CONTINUE_FLAG && (result=cursor->get(cursor,
+                    &key, &value, DB_NEXT)) == 0)
 	{
 		/*
 		((char *)key.data)[key.size] = '\0';

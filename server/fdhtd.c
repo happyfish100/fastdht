@@ -22,15 +22,16 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
-#include "shared_func.h"
-#include "process_ctrl.h"
-#include "logger.h"
+#include "fastcommon/shared_func.h"
+#include "fastcommon/process_ctrl.h"
+#include "fastcommon/logger.h"
+#include "fastcommon/ini_file_reader.h"
+#include "fastcommon/sockopt.h"
+#include "fastcommon/sched_thread.h"
+#include "sf/sf_service.h"
+#include "sf/sf_util.h"
 #include "fdht_global.h"
 #include "global.h"
-#include "ini_file_reader.h"
-#include "sockopt.h"
-#include "sched_thread.h"
-#include "fdht_io.h"
 #include "work_thread.h"
 #include "func.h"
 #include "sync.h"
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
 	char *conf_filename;
 	char bind_addr[IP_ADDRESS_SIZE];
 	int result;
-	int sock;
+    int wait_count;
 	struct sigaction act;
 	char pidFilename[MAX_PATH_SIZE];
 	bool stop;
@@ -112,24 +113,9 @@ int main(int argc, char *argv[])
 		logCrit("file: "__FILE__", line: %d, " \
 			"call dup2 fail, errno: %d, error info: %s, " \
 			"program exit!", __LINE__, errno, STRERROR(errno));
-		g_continue_flag = false;
+		SF_G_CONTINUE_FLAG = false;
 		log_destroy();
 		return errno;
-	}
-
-	sock = socketServer(bind_addr, g_server_port, &result);
-	if (sock < 0)
-	{
-		fdht_func_destroy();
-		log_destroy();
-		return result;
-	}
-
-	if ((result=tcpsetserveropt(sock, g_fdht_network_timeout)) != 0)
-	{
-		fdht_func_destroy();
-		log_destroy();
-		return result;
 	}
 
 	if ((result=write_to_pid_file(pidFilename)) != 0)
@@ -217,7 +203,7 @@ int main(int argc, char *argv[])
 
 		if ((result=start_dl_detect_thread()) != 0)
 		{
-			g_continue_flag = false;
+			SF_G_CONTINUE_FLAG = false;
 			fdht_func_destroy();
 			log_destroy();
 			return result;
@@ -226,7 +212,7 @@ int main(int argc, char *argv[])
 
 	if ((result=work_thread_init()) != 0)
 	{
-		g_continue_flag = false;
+		SF_G_CONTINUE_FLAG = false;
 		fdht_func_destroy();
 		log_destroy();
 		return result;
@@ -234,7 +220,7 @@ int main(int argc, char *argv[])
 
 	if ((result=fdht_init_schedule()) != 0)
 	{
-		g_continue_flag = false;
+		SF_G_CONTINUE_FLAG = false;
 		work_thread_destroy();
 		fdht_func_destroy();
 		log_destroy();
@@ -243,16 +229,20 @@ int main(int argc, char *argv[])
 
 	log_set_cache(true);
 
-	fdht_accept_loop(sock);
+	sf_accept_loop();
 
 	work_thread_destroy();
 
-	close(sock);
-
-	while (g_schedule_flag) //waiting for schedule thread exit
-	{
-		sleep(1);
-	}
+    wait_count = 0;
+    while ((SF_G_ALIVE_THREAD_COUNT != 0) || g_schedule_flag)
+    {
+        fc_sleep_ms(10);
+        if (++wait_count > 3000)
+        {
+            logWarning("waiting timeout, exit!");
+            break;
+        }
+    }
 
 	fdht_sync_destroy();
 
@@ -273,7 +263,7 @@ int main(int argc, char *argv[])
 
 static void sigQuitHandler(int sig)
 {
-	if (g_continue_flag)
+	if (SF_G_CONTINUE_FLAG)
 	{
 		fdht_terminate();
 		pthread_kill(schedule_tid, SIGINT);
@@ -298,8 +288,8 @@ static void sigHupHandler(int sig)
 static void sigUsrHandler(int sig)
 {
 	/*
-	logInfo("current thread count=%d, " \
-		"mo count=%d, success count=%d", g_thread_count, \
+	logInfo("current thread count=%d, "
+		"mo count=%d, success count=%d", SF_G_THREAD_STACK_SIZE,
 		nMoCount, nSuccMoCount);
 	*/
 }
@@ -408,14 +398,6 @@ static int fdht_init_schedule()
 	pScheduleEntry->id = pScheduleEntry - scheduleArray.entries + 1;
 	pScheduleEntry->time_base.hour = TIME_NONE;
 	pScheduleEntry->time_base.minute = TIME_NONE;
-	pScheduleEntry->interval = g_sync_log_buff_interval;
-	pScheduleEntry->task_func = log_sync_func;
-	pScheduleEntry->func_args = &g_log_context;
-	pScheduleEntry++;
-
-	pScheduleEntry->id = pScheduleEntry - scheduleArray.entries + 1;
-	pScheduleEntry->time_base.hour = TIME_NONE;
-	pScheduleEntry->time_base.minute = TIME_NONE;
 	pScheduleEntry->interval = g_sync_stat_file_interval;
 	pScheduleEntry->task_func = fdht_stat_file_sync_func;
 	pScheduleEntry->func_args = NULL;
@@ -496,7 +478,6 @@ static int fdht_init_schedule()
 		}
 	}
 
-	return sched_start(&scheduleArray, &schedule_tid, \
-		g_thread_stack_size, (bool * volatile)&g_continue_flag);
+	return sched_start(&scheduleArray, &schedule_tid,
+		SF_G_THREAD_STACK_SIZE, (bool * volatile)&SF_G_CONTINUE_FLAG);
 }
-
