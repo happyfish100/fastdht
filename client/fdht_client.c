@@ -18,6 +18,7 @@
 #include "fastcommon/hash.h"
 #include "fastcommon/shared_func.h"
 #include "fastcommon/ini_file_reader.h"
+#include "sf/sf_global.h"
 #include "fdht_types.h"
 #include "fdht_proto.h"
 #include "fdht_global.h"
@@ -79,40 +80,40 @@ int fdht_client_init(const char *filename)
 		pBasePath = iniGetStrValue(NULL, "base_path", &iniContext);
 		if (pBasePath == NULL)
 		{
-			logError("conf file \"%s\" must have item " \
+			logError("conf file \"%s\" must have item "
 				"\"base_path\"!", filename);
 			result = ENOENT;
 			break;
 		}
 
-		snprintf(g_fdht_base_path, sizeof(g_fdht_base_path), "%s", pBasePath);
-		chopPath(g_fdht_base_path);
-		if (!fileExists(g_fdht_base_path))
+		fc_safe_strcpy(SF_G_BASE_PATH_STR, pBasePath);
+		chopPath(SF_G_BASE_PATH_STR);
+		if (!fileExists(SF_G_BASE_PATH_STR))
 		{
-			logError("\"%s\" can't be accessed, error info: %s", \
-				g_fdht_base_path, STRERROR(errno));
+			logError("\"%s\" can't be accessed, error info: %s",
+				SF_G_BASE_PATH_STR, STRERROR(errno));
 			result = errno != 0 ? errno : ENOENT;
 			break;
 		}
-		if (!isDir(g_fdht_base_path))
+		if (!isDir(SF_G_BASE_PATH_STR))
 		{
-			logError("\"%s\" is not a directory!", g_fdht_base_path);
+			logError("\"%s\" is not a directory!", SF_G_BASE_PATH_STR);
 			result = ENOTDIR;
 			break;
 		}
 
-		g_fdht_connect_timeout = iniGetIntValue(NULL, "connect_timeout", \
+		SF_G_CONNECT_TIMEOUT = iniGetIntValue(NULL, "connect_timeout",
 				&iniContext, DEFAULT_CONNECT_TIMEOUT);
-		if (g_fdht_connect_timeout <= 0)
+		if (SF_G_CONNECT_TIMEOUT <= 0)
 		{
-			g_fdht_connect_timeout = DEFAULT_CONNECT_TIMEOUT;
+			SF_G_CONNECT_TIMEOUT = DEFAULT_CONNECT_TIMEOUT;
 		}
 
-		g_fdht_network_timeout = iniGetIntValue(NULL, "network_timeout", \
+		SF_G_NETWORK_TIMEOUT = iniGetIntValue(NULL, "network_timeout",
 				&iniContext, DEFAULT_NETWORK_TIMEOUT);
-		if (g_fdht_network_timeout <= 0)
+		if (SF_G_NETWORK_TIMEOUT <= 0)
 		{
-			g_fdht_network_timeout = DEFAULT_NETWORK_TIMEOUT;
+			SF_G_NETWORK_TIMEOUT = DEFAULT_NETWORK_TIMEOUT;
 		}
 
 		g_keep_alive = iniGetBoolValue(NULL, "keep_alive", \
@@ -142,8 +143,8 @@ int fdht_client_init(const char *filename)
 			"connect_timeout=%ds, network_timeout=%ds, " \
 			"keep_alive=%d, use_proxy=%d, %s"\
 			"group_count=%d, server_count=%d", __LINE__, \
-			g_fdht_base_path, g_fdht_connect_timeout, \
-			g_fdht_network_timeout, g_keep_alive, \
+			SF_G_BASE_PATH_STR, SF_G_CONNECT_TIMEOUT, \
+			SF_G_NETWORK_TIMEOUT, g_keep_alive, \
 			g_group_array.use_proxy, szProxyPrompt, \
 			g_group_array.group_count, g_group_array.server_count);
 
@@ -221,7 +222,7 @@ static FDHTServerInfo *get_connection(ServerArray *pServerArray, \
 		}
 
 		if ((*err_no=fdht_connect_server_nb(*ppServer, \
-			g_fdht_connect_timeout)) == 0)
+			SF_G_CONNECT_TIMEOUT)) == 0)
 		{
 			if (bKeepAlive)
 			{
@@ -240,7 +241,7 @@ static FDHTServerInfo *get_connection(ServerArray *pServerArray, \
 		}
 
 		if ((*err_no=fdht_connect_server_nb(*ppServer, \
-			g_fdht_connect_timeout)) == 0)
+			SF_G_CONNECT_TIMEOUT)) == 0)
 		{
 			if (bKeepAlive)
 			{
@@ -403,7 +404,7 @@ int fdht_get_ex1(GroupArray *pGroupArray, const bool bKeepAlive, \
 		p = buff + sizeof(FDHTProtoHeader);
 		PACK_BODY_UNTIL_KEY(pKeyInfo, p)
 		if ((result=tcpsenddata_nb(pServer->sock, buff, p - buff, \
-			g_fdht_network_timeout)) != 0)
+			SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("send data to server %s:%u fail, " \
 				"errno: %d, error info: %s", \
@@ -426,7 +427,7 @@ int fdht_get_ex1(GroupArray *pGroupArray, const bool bKeepAlive, \
 		}
 
 		if ((result=tcprecvdata_nb(pServer->sock, buff, \
-			4, g_fdht_network_timeout)) != 0)
+			4, SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("file: "__FILE__", line: %d, " \
 				"server: %s:%u, recv data fail, " \
@@ -474,7 +475,7 @@ int fdht_get_ex1(GroupArray *pGroupArray, const bool bKeepAlive, \
 		}
 
 		if ((result=tcprecvdata_nb(pServer->sock, *ppValue, \
-			*value_len, g_fdht_network_timeout)) != 0)
+			*value_len, SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("file: "__FILE__", line: %d, " \
 				"server: %s:%u, recv data fail, " \
@@ -614,7 +615,7 @@ int fdht_batch_set_ex(GroupArray *pGroupArray, const bool bKeepAlive, \
 	{
 		int2buff(pkg_total_len - sizeof(FDHTProtoHeader), pHeader->pkg_len);
 		if ((result=tcpsenddata_nb(pServer->sock, pBuff, pkg_total_len, \
-			g_fdht_network_timeout)) != 0)
+			SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("send data to server %s:%u fail, " \
 				"errno: %d, error info: %s", \
@@ -638,7 +639,7 @@ int fdht_batch_set_ex(GroupArray *pGroupArray, const bool bKeepAlive, \
 		}
 
 		if ((result=tcprecvdata_nb(pServer->sock, pBuff, \
-			in_bytes, g_fdht_network_timeout)) != 0)
+			in_bytes, SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("file: "__FILE__", line: %d, " \
 				"server: %s:%u, recv data fail, " \
@@ -769,7 +770,7 @@ int fdht_batch_delete_ex(GroupArray *pGroupArray, const bool bKeepAlive, \
 	{
 		int2buff((p - buff) - sizeof(FDHTProtoHeader), pHeader->pkg_len);
 		if ((result=tcpsenddata_nb(pServer->sock, buff, p - buff, \
-			g_fdht_network_timeout)) != 0)
+			SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("send data to server %s:%u fail, " \
 				"errno: %d, error info: %s", \
@@ -793,7 +794,7 @@ int fdht_batch_delete_ex(GroupArray *pGroupArray, const bool bKeepAlive, \
 		}
 
 		if ((result=tcprecvdata_nb(pServer->sock, buff, \
-			in_bytes, g_fdht_network_timeout)) != 0)
+			in_bytes, SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("file: "__FILE__", line: %d, " \
 				"server: %s:%u, recv data fail, " \
@@ -922,7 +923,7 @@ int fdht_batch_get_ex1(GroupArray *pGroupArray, const bool bKeepAlive, \
 	{
 		int2buff((p - buff) - sizeof(FDHTProtoHeader), pHeader->pkg_len);
 		if ((result=tcpsenddata_nb(pServer->sock, buff, p - buff, \
-			g_fdht_network_timeout)) != 0)
+			SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("send data to server %s:%u fail, " \
 				"errno: %d, error info: %s", \
@@ -960,7 +961,7 @@ int fdht_batch_get_ex1(GroupArray *pGroupArray, const bool bKeepAlive, \
 		}
 
 		if ((result=tcprecvdata_nb(pServer->sock, pInBuff, \
-			in_bytes, g_fdht_network_timeout)) != 0)
+			in_bytes, SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("file: "__FILE__", line: %d, " \
 				"server: %s:%u, recv data fail, " \
@@ -1201,7 +1202,7 @@ int fdht_inc_ex(GroupArray *pGroupArray, const bool bKeepAlive, \
 		int2buff(increase, p);
 		p += 4;
 		if ((result=tcpsenddata_nb(pServer->sock, buff, p - buff, \
-			g_fdht_network_timeout)) != 0)
+			SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("send data to server %s:%u fail, " \
 				"errno: %d, error info: %s", \
@@ -1338,7 +1339,7 @@ int fdht_connect_all_servers(GroupArray *pGroupArray, const bool bKeepAlive, \
 			pServerInfo<pServerEnd; pServerInfo++)
 	{
 		if ((conn_result=fdht_connect_server_nb(pServerInfo, \
-				g_fdht_connect_timeout)) != 0)
+				SF_G_CONNECT_TIMEOUT)) != 0)
 		{
 			result = conn_result;
 			(*fail_count)++;
@@ -1407,7 +1408,7 @@ int fdht_stat_ex(GroupArray *pGroupArray, const bool bKeepAlive, \
 	for (i=0; i<2; i++)
 	{
 	if ((result=fdht_connect_server_nb(pServer, \
-			g_fdht_connect_timeout)) != 0)
+			SF_G_CONNECT_TIMEOUT)) != 0)
 	{
 		return result;
 	}
@@ -1425,7 +1426,7 @@ int fdht_stat_ex(GroupArray *pGroupArray, const bool bKeepAlive, \
 	do
 	{
 		if ((result=tcpsenddata_nb(pServer->sock, &header, \
-			sizeof(header), g_fdht_network_timeout)) != 0)
+			sizeof(header), SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("send data to server %s:%u fail, " \
 				"errno: %d, error info: %s", \
@@ -1449,7 +1450,7 @@ int fdht_stat_ex(GroupArray *pGroupArray, const bool bKeepAlive, \
 		}
 
 		if ((result=tcprecvdata_nb(pServer->sock, buff, \
-			in_bytes, g_fdht_network_timeout)) != 0)
+			in_bytes, SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("file: "__FILE__", line: %d, " \
 				"server: %s:%u, recv data fail, " \
@@ -1528,7 +1529,7 @@ int fdht_get_sub_keys_ex(GroupArray *pGroupArray, const bool bKeepAlive, \
 	{
 		int2buff((p - buff) - sizeof(FDHTProtoHeader), pHeader->pkg_len);
 		if ((result=tcpsenddata_nb(pServer->sock, buff, p - buff, \
-			g_fdht_network_timeout)) != 0)
+			SF_G_NETWORK_TIMEOUT)) != 0)
 		{
 			logError("send data to server %s:%u fail, " \
 				"errno: %d, error info: %s", \

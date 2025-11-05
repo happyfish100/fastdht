@@ -20,6 +20,7 @@
 #include "fastcommon/ini_file_reader.h"
 #include "fastcommon/fast_task_queue.h"
 #include "sf/sf_service.h"
+#include "sf/sf_global.h"
 #include "sf/sf_util.h"
 #include "fdht_global.h"
 #include "global.h"
@@ -347,8 +348,8 @@ static char *fdht_get_stat_filename(const void *pArg, char *full_filename)
 		full_filename = buff;
 	}
 
-	snprintf(full_filename, MAX_PATH_SIZE, \
-			"%s/data/%s", g_fdht_base_path, \
+	snprintf(full_filename, MAX_PATH_SIZE,
+			"%s/data/%s", SF_G_BASE_PATH_STR,
 			FDHT_STAT_FILENAME);
 	return full_filename;
 }
@@ -413,27 +414,13 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
         }
 
 		load_log_level(&iniContext);
-		if ((result=log_set_prefix(g_fdht_base_path, "fdhtd")) != 0)
+		if ((result=log_set_prefix(SF_G_BASE_PATH_STR, "fdhtd")) != 0)
 		{
 			break;
 		}
 
-		g_fdht_connect_timeout = iniGetIntValue(NULL, "connect_timeout", \
-				&iniContext, DEFAULT_CONNECT_TIMEOUT);
-		if (g_fdht_connect_timeout <= 0)
-		{
-			g_fdht_connect_timeout = DEFAULT_CONNECT_TIMEOUT;
-		}
-
-		g_fdht_network_timeout = iniGetIntValue(NULL, "network_timeout", \
-				&iniContext, DEFAULT_NETWORK_TIMEOUT);
-		if (g_fdht_network_timeout <= 0)
-		{
-			g_fdht_network_timeout = DEFAULT_NETWORK_TIMEOUT;
-		}
-
-		g_network_tv.tv_sec = g_fdht_network_timeout;
-		g_heart_beat_interval = g_fdht_network_timeout / 2;
+		g_network_tv.tv_sec = SF_G_NETWORK_TIMEOUT;
+		g_heart_beat_interval = SF_G_NETWORK_TIMEOUT / 2;
 		if (g_heart_beat_interval <= 0)
 		{
 			g_heart_beat_interval = 1;
@@ -812,7 +799,7 @@ static int fdht_load_stat_from_file()
 	memset(&g_server_stat, 0, sizeof(g_server_stat));
 	memset(&fdht_last_stat, 0, sizeof(fdht_last_stat));
 
-	snprintf(data_path, sizeof(data_path), "%s/data", g_fdht_base_path);
+	snprintf(data_path, sizeof(data_path), "%s/data", SF_G_BASE_PATH_STR);
 	if (!fileExists(data_path))
 	{
 		if (mkdir(data_path, 0755) != 0)
@@ -986,7 +973,7 @@ int fdht_func_init(const char *filename, char *bind_addr, const int addr_size)
 		{
 			if ((result=db_init(&g_db_list[*pGroupId], db_type, \
 						nCacheSize, page_size, \
-						g_fdht_base_path, db_filename)) != 0)
+						SF_G_BASE_PATH_STR, db_filename)) != 0)
 			{
 				break;
 			}

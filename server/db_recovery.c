@@ -191,8 +191,8 @@ static char *fdht_get_db_recovery_mark_filename(const void *pArg, \
 		full_filename = buff;
 	}
 
-	snprintf(full_filename, MAX_PATH_SIZE, \
-			"%s/data/%s", g_fdht_base_path, \
+	snprintf(full_filename, MAX_PATH_SIZE,
+			"%s/data/%s", SF_G_BASE_PATH_STR,
 			LOCAL_DB_SYNC_MARK_FILENAME);
 	return full_filename;
 }

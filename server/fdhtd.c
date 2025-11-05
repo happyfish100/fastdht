@@ -74,14 +74,12 @@ int main(int argc, char *argv[])
 	log_init();
 	conf_filename = argv[1];
 
-	if ((result=get_base_path_from_conf_file(conf_filename,
-		g_fdht_base_path, sizeof(g_fdht_base_path))) != 0)
-	{
+	if ((result=sf_get_base_path_from_conf_file(conf_filename)) != 0) {
 		log_destroy();
 		return result;
 	}
 	snprintf(pidFilename, sizeof(pidFilename),
-		"%s/data/fdhtd.pid", g_fdht_base_path);
+		"%s/data/fdhtd.pid", SF_G_BASE_PATH_STR);
 	if ((result=process_action(pidFilename, argv[2], &stop)) != 0)
 	{
 		if (result == EINVAL)
@@ -331,7 +329,7 @@ static int fdht_compress_binlog_func(void *arg)
 	{
 		cmd = "/usr/bin/fdht_compress";
 	}
-	if (execl(cmd, cmd, g_fdht_base_path, "auto", NULL) < 0)
+	if (execl(cmd, cmd, SF_G_BASE_PATH_STR, "auto", NULL) < 0)
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"execl fdht_compress fail, errno: %d, error info: %s", \

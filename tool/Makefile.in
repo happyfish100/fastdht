@@ -1,8 +1,8 @@
 .SUFFIXES: .c .o
 
 COMPILE = $(CC) $(CFLAGS)
-INC_PATH = -I../common -I../server -I/usr/include/fastcommon -I/usr/local/include
-LIB_PATH = -L/usr/local/lib -lfastcommon $(LIBS)
+INC_PATH = -I../common -I../server -I/usr/local/include
+LIB_PATH = -L/usr/local/lib -lfastcommon -lserverframe $(LIBS)
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
 COMMON_LIB =
