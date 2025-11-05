@@ -116,8 +116,12 @@ int main(int argc, char *argv[])
 		return errno;
 	}
 
-	if ((result=write_to_pid_file(pidFilename)) != 0)
-	{
+    if ((result=sf_socket_server()) != 0) {
+		log_destroy();
+		return result;
+    }
+
+	if ((result=write_to_pid_file(pidFilename)) != 0) {
 		log_destroy();
 		return result;
 	}
@@ -342,22 +346,22 @@ static int fdht_compress_binlog_func(void *arg)
 
 static int fdht_init_schedule()
 {
-	int entry_count;
+	int alloc_count;
 	int i;
 	ScheduleEntry *pScheduleEntry;
 
-	entry_count = 2;
+	alloc_count = 4;
 	if (g_store_type == FDHT_STORE_TYPE_BDB && g_sync_db_interval > 0)
 	{
-		entry_count++;
+		alloc_count++;
 	}
 	if (g_write_to_binlog_flag)
 	{
-		entry_count++;
+		alloc_count++;
 	}
 	if (g_compress_binlog_interval > 0 && g_need_clear_expired_data)
 	{
-		entry_count++;
+		alloc_count++;
 	}
 	if (g_clear_expired_interval > 0)
 	{
@@ -367,31 +371,32 @@ static int fdht_init_schedule()
 			{
 				if (g_db_list[i] != NULL)
 				{
-					entry_count++;
+					alloc_count++;
 				}
 			}
 		}
 		else //mpool
 		{
-			entry_count++;
+			alloc_count++;
 		}
 	}
 
-	scheduleArray.entries = (ScheduleEntry *)malloc( \
-				sizeof(ScheduleEntry) * entry_count);
+	scheduleArray.entries = (ScheduleEntry *)malloc(
+				sizeof(ScheduleEntry) * alloc_count);
 	if (scheduleArray.entries == NULL)
 	{
 		logError("file: "__FILE__", line: %d, " \
 			"malloc %d bytes fail, " \
 			"errno: %d, error info: %s", \
-			__LINE__, (int)sizeof(ScheduleEntry) * entry_count, \
+			__LINE__, (int)sizeof(ScheduleEntry) * alloc_count,
 			errno, STRERROR(errno));
 		return errno != 0 ? errno : ENOMEM;
 	}
+	memset(scheduleArray.entries, 0, sizeof(ScheduleEntry) * alloc_count);
 
-	pScheduleEntry = scheduleArray.entries;
-	scheduleArray.count = entry_count;
-	memset(pScheduleEntry, 0, sizeof(ScheduleEntry) * entry_count);
+    sf_logger_setup_schedule(&g_log_context, &g_sf_global_vars.
+            error_log, &scheduleArray);
+	pScheduleEntry = scheduleArray.entries + scheduleArray.count;
 
 	pScheduleEntry->id = pScheduleEntry - scheduleArray.entries + 1;
 	pScheduleEntry->time_base.hour = TIME_NONE;
@@ -476,6 +481,7 @@ static int fdht_init_schedule()
 		}
 	}
 
+	scheduleArray.count = pScheduleEntry - scheduleArray.entries;
 	return sched_start(&scheduleArray, &schedule_tid,
 		SF_G_THREAD_STACK_SIZE, (bool * volatile)&SF_G_CONTINUE_FLAG);
 }

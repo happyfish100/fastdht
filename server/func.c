@@ -380,6 +380,8 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 	char sz_clear_expired_time_base[16];
 	char sz_compress_binlog_time_base[16];
 	char szStoreParams[256];
+    char sz_global_config[512];
+    char sz_service_config[128];
 
 	if ((result=iniLoadFromFile(filename, &iniContext)) != 0)
 	{
@@ -751,6 +753,10 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 		g_store_sub_keys = iniGetBoolValue(NULL, "store_sub_keys", \
 						&iniContext, false);
 
+        sf_global_config_to_string(sz_global_config, sizeof(sz_global_config));
+        sf_context_config_to_string(&g_sf_context, sz_service_config,
+                sizeof(sz_service_config));
+
 		logInfo("FastDHT v%d.%02d, " \
 			"total group count=%d, my group count=%d, "
 			"group server count=%d, "
@@ -767,7 +773,7 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 			"sync_stat_file_interval=%ds, "
 			"write_mark_file_freq=%d, "
             "if_alias_prefix=%s, "
-			"store_sub_keys=%d",
+			"store_sub_keys=%d, %s, service: {%s}",
 			g_fdht_version.major, g_fdht_version.minor,
             g_group_count, *group_count,
 			g_group_server_count,
@@ -781,7 +787,8 @@ static int fdht_load_from_conf_file(const char *filename, char *bind_addr, \
 			sz_compress_binlog_time_base,
 			g_compress_binlog_interval, g_sync_stat_file_interval,
  			g_write_mark_file_freq,
-			g_if_alias_prefix, g_store_sub_keys);
+			g_if_alias_prefix, g_store_sub_keys,
+            sz_global_config, sz_service_config);
 	} while (0);
 
 	iniFreeContext(&iniContext);
